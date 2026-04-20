@@ -86,6 +86,14 @@ func TestHandlerErrors(t *testing.T) {
 			wantError: "userid is required",
 		},
 		{
+			name:      "invalid phone",
+			method:    http.MethodPost,
+			path:      "/create",
+			body:      `{"userid":"u-1","name":"Alice","email":"alice@example.com","phone":"12800138000"}`,
+			wantCode:  http.StatusBadRequest,
+			wantError: "phone must be a valid mainland China mobile number",
+		},
+		{
 			name:      "missing record",
 			method:    http.MethodPost,
 			path:      "/read",

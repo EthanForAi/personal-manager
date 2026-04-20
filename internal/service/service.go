@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"regexp"
 	"strings"
 
 	"personal-manager/internal/model"
@@ -10,6 +11,8 @@ import (
 )
 
 var ErrValidation = errors.New("validation failed")
+
+var mainlandChinaMobilePattern = regexp.MustCompile(`^1[3-9][0-9]{9}$`)
 
 type ValidationError struct {
 	Message string
@@ -103,6 +106,8 @@ func validatePerson(person model.Person) error {
 		return validationError("email is required")
 	case person.Phone == "":
 		return validationError("phone is required")
+	case !mainlandChinaMobilePattern.MatchString(person.Phone):
+		return validationError("phone must be a valid mainland China mobile number")
 	default:
 		return nil
 	}

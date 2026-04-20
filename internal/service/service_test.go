@@ -96,6 +96,38 @@ func TestCreateNormalizesAndStoresPerson(t *testing.T) {
 	}
 }
 
+func TestCreateValidatesMainlandChinaMobilePhone(t *testing.T) {
+	tests := []struct {
+		name  string
+		phone string
+	}{
+		{name: "invalid prefix", phone: "12800138000"},
+		{name: "too short", phone: "1380013800"},
+		{name: "too long", phone: "138001380000"},
+		{name: "contains non digit", phone: "1380013800a"},
+		{name: "with country code", phone: "+8613800138000"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := New(&fakeStore{})
+
+			_, err := svc.Create(context.Background(), model.Person{
+				UserID: "u-1",
+				Name:   "Alice",
+				Email:  "alice@example.com",
+				Phone:  tt.phone,
+			})
+			if !errors.Is(err, ErrValidation) {
+				t.Fatalf("Create() error = %v, want validation error", err)
+			}
+			if err.Error() != "phone must be a valid mainland China mobile number" {
+				t.Fatalf("Create() error = %q, want phone validation message", err.Error())
+			}
+		})
+	}
+}
+
 func TestCreateDuplicateUserIDReturnsValidationError(t *testing.T) {
 	svc := New(&fakeStore{createErr: store.ErrDuplicate})
 
