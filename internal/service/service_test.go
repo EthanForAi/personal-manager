@@ -1,0 +1,148 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"personal-manager/internal/model"
+	"personal-manager/internal/store"
+)
+
+func TestCreateValidatesRequiredFields(t *testing.T) {
+	tests := []struct {
+		name    string
+		person  model.Person
+		wantErr string
+	}{
+		{
+			name: "missing userid",
+			person: model.Person{
+				Name:  "Alice",
+				Email: "alice@example.com",
+				Phone: "13800138000",
+			},
+			wantErr: "userid is required",
+		},
+		{
+			name: "missing name",
+			person: model.Person{
+				UserID: "u-1",
+				Email:  "alice@example.com",
+				Phone:  "13800138000",
+			},
+			wantErr: "name is required",
+		},
+		{
+			name: "missing email",
+			person: model.Person{
+				UserID: "u-1",
+				Name:   "Alice",
+				Phone:  "13800138000",
+			},
+			wantErr: "email is required",
+		},
+		{
+			name: "missing phone",
+			person: model.Person{
+				UserID: "u-1",
+				Name:   "Alice",
+				Email:  "alice@example.com",
+			},
+			wantErr: "phone is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := New(&fakeStore{})
+
+			_, err := svc.Create(context.Background(), tt.person)
+			if !errors.Is(err, ErrValidation) {
+				t.Fatalf("Create() error = %v, want validation error", err)
+			}
+			if err.Error() != tt.wantErr {
+				t.Fatalf("Create() error = %q, want %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestCreateNormalizesAndStoresPerson(t *testing.T) {
+	st := &fakeStore{}
+	svc := New(st)
+
+	got, err := svc.Create(context.Background(), model.Person{
+		UserID: " u-1 ",
+		Name:   " Alice ",
+		Email:  " alice@example.com ",
+		Phone:  " 13800138000 ",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	want := model.Person{
+		UserID: "u-1",
+		Name:   "Alice",
+		Email:  "alice@example.com",
+		Phone:  "13800138000",
+	}
+	if got != want {
+		t.Fatalf("Create() = %#v, want %#v", got, want)
+	}
+	if st.created != want {
+		t.Fatalf("stored person = %#v, want %#v", st.created, want)
+	}
+}
+
+func TestCreateDuplicateUserIDReturnsValidationError(t *testing.T) {
+	svc := New(&fakeStore{createErr: store.ErrDuplicate})
+
+	_, err := svc.Create(context.Background(), model.Person{
+		UserID: "u-1",
+		Name:   "Alice",
+		Email:  "alice@example.com",
+		Phone:  "13800138000",
+	})
+	if !errors.Is(err, ErrValidation) {
+		t.Fatalf("Create() error = %v, want validation error", err)
+	}
+	if err.Error() != "userid already exists" {
+		t.Fatalf("Create() error = %q, want duplicate message", err.Error())
+	}
+}
+
+func TestReadAndDeleteValidateUserID(t *testing.T) {
+	svc := New(&fakeStore{})
+
+	if _, err := svc.Read(context.Background(), " "); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Read() error = %v, want validation error", err)
+	}
+
+	if err := svc.Delete(context.Background(), " "); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Delete() error = %v, want validation error", err)
+	}
+}
+
+type fakeStore struct {
+	created   model.Person
+	createErr error
+}
+
+func (f *fakeStore) Create(_ context.Context, person model.Person) error {
+	f.created = person
+	return f.createErr
+}
+
+func (f *fakeStore) Get(_ context.Context, userid string) (model.Person, error) {
+	return model.Person{UserID: userid}, nil
+}
+
+func (f *fakeStore) Update(_ context.Context, person model.Person) error {
+	return nil
+}
+
+func (f *fakeStore) Delete(_ context.Context, userid string) error {
+	return nil
+}
