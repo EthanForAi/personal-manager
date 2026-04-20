@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"net/mail"
 	"regexp"
 	"strings"
 
@@ -104,6 +105,8 @@ func validatePerson(person model.Person) error {
 		return validationError("name is required")
 	case person.Email == "":
 		return validationError("email is required")
+	case !validEmail(person.Email):
+		return validationError("email must be a valid email address")
 	case person.Phone == "":
 		return validationError("phone is required")
 	case !mainlandChinaMobilePattern.MatchString(person.Phone):
@@ -111,6 +114,11 @@ func validatePerson(person model.Person) error {
 	default:
 		return nil
 	}
+}
+
+func validEmail(email string) bool {
+	address, err := mail.ParseAddress(email)
+	return err == nil && address.Address == email
 }
 
 func validationError(message string) error {

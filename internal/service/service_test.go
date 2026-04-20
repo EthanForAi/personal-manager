@@ -96,6 +96,38 @@ func TestCreateNormalizesAndStoresPerson(t *testing.T) {
 	}
 }
 
+func TestCreateValidatesEmailFormat(t *testing.T) {
+	tests := []struct {
+		name  string
+		email string
+	}{
+		{name: "missing at sign", email: "alice.example.com"},
+		{name: "missing local part", email: "@example.com"},
+		{name: "missing domain", email: "alice@"},
+		{name: "contains space", email: "alice smith@example.com"},
+		{name: "display name", email: "Alice <alice@example.com>"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := New(&fakeStore{})
+
+			_, err := svc.Create(context.Background(), model.Person{
+				UserID: "u-1",
+				Name:   "Alice",
+				Email:  tt.email,
+				Phone:  "13800138000",
+			})
+			if !errors.Is(err, ErrValidation) {
+				t.Fatalf("Create() error = %v, want validation error", err)
+			}
+			if err.Error() != "email must be a valid email address" {
+				t.Fatalf("Create() error = %q, want email validation message", err.Error())
+			}
+		})
+	}
+}
+
 func TestCreateValidatesMainlandChinaMobilePhone(t *testing.T) {
 	tests := []struct {
 		name  string
