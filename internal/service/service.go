@@ -13,7 +13,10 @@ import (
 
 var ErrValidation = errors.New("validation failed")
 
-var mainlandChinaMobilePattern = regexp.MustCompile(`^1[3-9][0-9]{9}$`)
+var (
+	lettersOnlyNamePattern     = regexp.MustCompile(`^[A-Za-z]+$`)
+	mainlandChinaMobilePattern = regexp.MustCompile(`^1[3-9][0-9]{9}$`)
+)
 
 type ValidationError struct {
 	Message string
@@ -103,6 +106,8 @@ func validatePerson(person model.Person) error {
 		return validationError("userid is required")
 	case person.Name == "":
 		return validationError("name is required")
+	case !lettersOnlyNamePattern.MatchString(person.Name):
+		return validationError("name must contain letters only")
 	case person.Email == "":
 		return validationError("email is required")
 	case !validEmail(person.Email):
