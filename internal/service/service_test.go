@@ -96,6 +96,38 @@ func TestCreateNormalizesAndStoresPerson(t *testing.T) {
 	}
 }
 
+func TestCreateValidatesNameLettersOnly(t *testing.T) {
+	tests := []struct {
+		nameValue string
+		caseName  string
+	}{
+		{nameValue: "Alice Smith", caseName: "contains space"},
+		{nameValue: "Alice1", caseName: "contains digit"},
+		{nameValue: "Alice-Smith", caseName: "contains hyphen"},
+		{nameValue: "Alice_ Smith", caseName: "contains underscore"},
+		{nameValue: "Alice!", caseName: "contains punctuation"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.caseName, func(t *testing.T) {
+			svc := New(&fakeStore{})
+
+			_, err := svc.Create(context.Background(), model.Person{
+				UserID: "u-1",
+				Name:   tt.nameValue,
+				Email:  "alice@example.com",
+				Phone:  "13800138000",
+			})
+			if !errors.Is(err, ErrValidation) {
+				t.Fatalf("Create() error = %v, want validation error", err)
+			}
+			if err.Error() != "name must contain letters only" {
+				t.Fatalf("Create() error = %q, want name validation message", err.Error())
+			}
+		})
+	}
+}
+
 func TestCreateValidatesEmailFormat(t *testing.T) {
 	tests := []struct {
 		name  string

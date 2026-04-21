@@ -35,12 +35,12 @@ func TestHandlerCRUD(t *testing.T) {
 		Phone:  "13800138000",
 	})
 
-	updateBody := `{"userid":"u-1","name":"Alice Smith","email":"alice.smith@example.com","phone":"13900139000"}`
+	updateBody := `{"userid":"u-1","name":"AliceSmith","email":"alice.smith@example.com","phone":"13900139000"}`
 	rec = postJSON(router, "/update", updateBody)
 	assertStatus(t, rec, http.StatusOK)
 	assertPerson(t, rec, model.Person{
 		UserID: "u-1",
-		Name:   "Alice Smith",
+		Name:   "AliceSmith",
 		Email:  "alice.smith@example.com",
 		Phone:  "13900139000",
 	})
@@ -84,6 +84,14 @@ func TestHandlerErrors(t *testing.T) {
 			body:      `{"name":"Alice","email":"alice@example.com","phone":"13800138000"}`,
 			wantCode:  http.StatusBadRequest,
 			wantError: "userid is required",
+		},
+		{
+			name:      "invalid name",
+			method:    http.MethodPost,
+			path:      "/create",
+			body:      `{"userid":"u-1","name":"Alice1","email":"alice@example.com","phone":"13800138000"}`,
+			wantCode:  http.StatusBadRequest,
+			wantError: "name must contain letters only",
 		},
 		{
 			name:      "invalid email",
