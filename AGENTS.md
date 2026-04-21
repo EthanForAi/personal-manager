@@ -215,6 +215,44 @@ If formatting may have changed, run:
 gofmt -w <changed-go-files>
 ```
 
+## Branch Strategy
+
+Use `main` as the stable trunk branch.
+
+Do not develop features or bug fixes directly on `main` unless the user explicitly requests it.
+
+For every new feature or bug fix:
+
+1. Start from the latest `main`.
+2. Create a dedicated branch named `codex/<task-name>`.
+3. Keep the branch focused on one feature, fix, or small related change set.
+4. Implement the change and update meaningful tests.
+5. Run `go test ./...` and fix failures before finishing.
+6. Push the branch to GitHub.
+7. Open a pull request back into `main` when the change is ready for review.
+
+Branch naming examples:
+- `codex/add-person-tags`
+- `codex/fix-email-validation`
+- `codex/sqlite-schema`
+
+If a branch already exists for the current task, continue using that branch instead of creating a duplicate. If the worktree is already on `main`, create a new task branch before making code changes.
+
+## Completion Output
+
+After each completed task, include the important commands the user may need next.
+
+For this service, include relevant commands such as:
+- start the server
+- stop the server
+- create personal data
+- read personal data
+- update personal data
+- delete personal data
+- run tests
+
+Use concrete commands with the actual host, port, file paths, and JSON fields whenever they are known. If a command is not relevant to the completed task, omit it rather than adding noise.
+
 ## Change Discipline
 
 - Inspect existing code before editing.
