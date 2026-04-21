@@ -13,7 +13,10 @@ import (
 
 var ErrValidation = errors.New("validation failed")
 
-var mainlandChinaMobilePattern = regexp.MustCompile(`^1[3-9][0-9]{9}$`)
+var (
+	userIDPattern              = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+	mainlandChinaMobilePattern = regexp.MustCompile(`^1[3-9][0-9]{9}$`)
+)
 
 type ValidationError struct {
 	Message string
@@ -60,8 +63,8 @@ func (s *Service) Create(ctx context.Context, person model.Person) (model.Person
 
 func (s *Service) Read(ctx context.Context, userid string) (model.Person, error) {
 	userid = strings.TrimSpace(userid)
-	if userid == "" {
-		return model.Person{}, validationError("userid is required")
+	if err := validateUserID(userid); err != nil {
+		return model.Person{}, err
 	}
 
 	return s.store.Get(ctx, userid)
@@ -82,8 +85,8 @@ func (s *Service) Update(ctx context.Context, person model.Person) (model.Person
 
 func (s *Service) Delete(ctx context.Context, userid string) error {
 	userid = strings.TrimSpace(userid)
-	if userid == "" {
-		return validationError("userid is required")
+	if err := validateUserID(userid); err != nil {
+		return err
 	}
 
 	return s.store.Delete(ctx, userid)
@@ -98,9 +101,11 @@ func normalize(person model.Person) model.Person {
 }
 
 func validatePerson(person model.Person) error {
+	if err := validateUserID(person.UserID); err != nil {
+		return err
+	}
+
 	switch {
-	case person.UserID == "":
-		return validationError("userid is required")
 	case person.Name == "":
 		return validationError("name is required")
 	case person.Email == "":
@@ -111,6 +116,17 @@ func validatePerson(person model.Person) error {
 		return validationError("phone is required")
 	case !mainlandChinaMobilePattern.MatchString(person.Phone):
 		return validationError("phone must be a valid mainland China mobile number")
+	default:
+		return nil
+	}
+}
+
+func validateUserID(userid string) error {
+	switch {
+	case userid == "":
+		return validationError("userid is required")
+	case !userIDPattern.MatchString(userid):
+		return validationError("userid must start with a letter and contain letters and digits only")
 	default:
 		return nil
 	}
