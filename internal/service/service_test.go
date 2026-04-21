@@ -27,7 +27,7 @@ func TestCreateValidatesRequiredFields(t *testing.T) {
 		{
 			name: "missing name",
 			person: model.Person{
-				UserID: "u-1",
+				UserID: "u1",
 				Email:  "alice@example.com",
 				Phone:  "13800138000",
 			},
@@ -36,7 +36,7 @@ func TestCreateValidatesRequiredFields(t *testing.T) {
 		{
 			name: "missing email",
 			person: model.Person{
-				UserID: "u-1",
+				UserID: "u1",
 				Name:   "Alice",
 				Phone:  "13800138000",
 			},
@@ -45,7 +45,7 @@ func TestCreateValidatesRequiredFields(t *testing.T) {
 		{
 			name: "missing phone",
 			person: model.Person{
-				UserID: "u-1",
+				UserID: "u1",
 				Name:   "Alice",
 				Email:  "alice@example.com",
 			},
@@ -73,7 +73,7 @@ func TestCreateNormalizesAndStoresPerson(t *testing.T) {
 	svc := New(st)
 
 	got, err := svc.Create(context.Background(), model.Person{
-		UserID: " u-1 ",
+		UserID: " u1 ",
 		Name:   " Alice ",
 		Email:  " alice@example.com ",
 		Phone:  " 13800138000 ",
@@ -83,7 +83,7 @@ func TestCreateNormalizesAndStoresPerson(t *testing.T) {
 	}
 
 	want := model.Person{
-		UserID: "u-1",
+		UserID: "u1",
 		Name:   "Alice",
 		Email:  "alice@example.com",
 		Phone:  "13800138000",
@@ -93,6 +93,39 @@ func TestCreateNormalizesAndStoresPerson(t *testing.T) {
 	}
 	if st.created != want {
 		t.Fatalf("stored person = %#v, want %#v", st.created, want)
+	}
+}
+
+func TestCreateValidatesUserIDFormat(t *testing.T) {
+	tests := []struct {
+		name   string
+		userid string
+	}{
+		{name: "starts with digit", userid: "1user"},
+		{name: "contains hyphen", userid: "u-1"},
+		{name: "contains underscore", userid: "u_1"},
+		{name: "contains space", userid: "user 1"},
+		{name: "contains punctuation", userid: "user!"},
+		{name: "contains non ASCII letter", userid: "用户1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := New(&fakeStore{})
+
+			_, err := svc.Create(context.Background(), model.Person{
+				UserID: tt.userid,
+				Name:   "Alice",
+				Email:  "alice@example.com",
+				Phone:  "13800138000",
+			})
+			if !errors.Is(err, ErrValidation) {
+				t.Fatalf("Create() error = %v, want validation error", err)
+			}
+			if err.Error() != "userid must start with a letter and contain letters and digits only" {
+				t.Fatalf("Create() error = %q, want userid validation message", err.Error())
+			}
+		})
 	}
 }
 
@@ -113,7 +146,7 @@ func TestCreateValidatesEmailFormat(t *testing.T) {
 			svc := New(&fakeStore{})
 
 			_, err := svc.Create(context.Background(), model.Person{
-				UserID: "u-1",
+				UserID: "u1",
 				Name:   "Alice",
 				Email:  tt.email,
 				Phone:  "13800138000",
@@ -145,7 +178,7 @@ func TestCreateValidatesMainlandChinaMobilePhone(t *testing.T) {
 			svc := New(&fakeStore{})
 
 			_, err := svc.Create(context.Background(), model.Person{
-				UserID: "u-1",
+				UserID: "u1",
 				Name:   "Alice",
 				Email:  "alice@example.com",
 				Phone:  tt.phone,
@@ -164,7 +197,7 @@ func TestCreateDuplicateUserIDReturnsValidationError(t *testing.T) {
 	svc := New(&fakeStore{createErr: store.ErrDuplicate})
 
 	_, err := svc.Create(context.Background(), model.Person{
-		UserID: "u-1",
+		UserID: "u1",
 		Name:   "Alice",
 		Email:  "alice@example.com",
 		Phone:  "13800138000",
@@ -185,6 +218,18 @@ func TestReadAndDeleteValidateUserID(t *testing.T) {
 	}
 
 	if err := svc.Delete(context.Background(), " "); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Delete() error = %v, want validation error", err)
+	}
+}
+
+func TestReadAndDeleteValidateUserIDFormat(t *testing.T) {
+	svc := New(&fakeStore{})
+
+	if _, err := svc.Read(context.Background(), "1user"); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Read() error = %v, want validation error", err)
+	}
+
+	if err := svc.Delete(context.Background(), "user-1"); !errors.Is(err, ErrValidation) {
 		t.Fatalf("Delete() error = %v, want validation error", err)
 	}
 }

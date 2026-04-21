@@ -16,36 +16,36 @@ import (
 func TestHandlerCRUD(t *testing.T) {
 	router := newTestRouter(t)
 
-	createBody := `{"userid":"u-1","name":"Alice","email":"alice@example.com","phone":"13800138000"}`
+	createBody := `{"userid":"u1","name":"Alice","email":"alice@example.com","phone":"13800138000"}`
 	rec := postJSON(router, "/create", createBody)
 	assertStatus(t, rec, http.StatusOK)
 	assertPerson(t, rec, model.Person{
-		UserID: "u-1",
+		UserID: "u1",
 		Name:   "Alice",
 		Email:  "alice@example.com",
 		Phone:  "13800138000",
 	})
 
-	rec = postJSON(router, "/read", `{"userid":"u-1"}`)
+	rec = postJSON(router, "/read", `{"userid":"u1"}`)
 	assertStatus(t, rec, http.StatusOK)
 	assertPerson(t, rec, model.Person{
-		UserID: "u-1",
+		UserID: "u1",
 		Name:   "Alice",
 		Email:  "alice@example.com",
 		Phone:  "13800138000",
 	})
 
-	updateBody := `{"userid":"u-1","name":"Alice Smith","email":"alice.smith@example.com","phone":"13900139000"}`
+	updateBody := `{"userid":"u1","name":"Alice Smith","email":"alice.smith@example.com","phone":"13900139000"}`
 	rec = postJSON(router, "/update", updateBody)
 	assertStatus(t, rec, http.StatusOK)
 	assertPerson(t, rec, model.Person{
-		UserID: "u-1",
+		UserID: "u1",
 		Name:   "Alice Smith",
 		Email:  "alice.smith@example.com",
 		Phone:  "13900139000",
 	})
 
-	rec = postJSON(router, "/delete", `{"userid":"u-1"}`)
+	rec = postJSON(router, "/delete", `{"userid":"u1"}`)
 	assertStatus(t, rec, http.StatusOK)
 	var deleted model.DeleteResponse
 	decodeBody(t, rec, &deleted)
@@ -53,7 +53,7 @@ func TestHandlerCRUD(t *testing.T) {
 		t.Fatalf("deleted = false, want true")
 	}
 
-	rec = postJSON(router, "/read", `{"userid":"u-1"}`)
+	rec = postJSON(router, "/read", `{"userid":"u1"}`)
 	assertStatus(t, rec, http.StatusNotFound)
 	assertError(t, rec, "record not found")
 }
@@ -86,10 +86,18 @@ func TestHandlerErrors(t *testing.T) {
 			wantError: "userid is required",
 		},
 		{
+			name:      "invalid userid",
+			method:    http.MethodPost,
+			path:      "/create",
+			body:      `{"userid":"1user","name":"Alice","email":"alice@example.com","phone":"13800138000"}`,
+			wantCode:  http.StatusBadRequest,
+			wantError: "userid must start with a letter and contain letters and digits only",
+		},
+		{
 			name:      "invalid email",
 			method:    http.MethodPost,
 			path:      "/create",
-			body:      `{"userid":"u-1","name":"Alice","email":"alice.example.com","phone":"13800138000"}`,
+			body:      `{"userid":"u1","name":"Alice","email":"alice.example.com","phone":"13800138000"}`,
 			wantCode:  http.StatusBadRequest,
 			wantError: "email must be a valid email address",
 		},
@@ -97,7 +105,7 @@ func TestHandlerErrors(t *testing.T) {
 			name:      "invalid phone",
 			method:    http.MethodPost,
 			path:      "/create",
-			body:      `{"userid":"u-1","name":"Alice","email":"alice@example.com","phone":"12800138000"}`,
+			body:      `{"userid":"u1","name":"Alice","email":"alice@example.com","phone":"12800138000"}`,
 			wantCode:  http.StatusBadRequest,
 			wantError: "phone must be a valid mainland China mobile number",
 		},
