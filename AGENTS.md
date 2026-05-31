@@ -22,6 +22,7 @@ Implement requested changes with minimal correct modifications, add or update me
 ## Skill and MCP Tooling
 
 - Use available Codex skills and MCP tools when they directly support the task, especially for GitHub workflow, code review, test automation, and repository delivery.
+- For deployment to `robot-43:/tmp/personal-manager`, use the repo-local skill at `.codex/skills/deploy-personal-manager-to-robot43/SKILL.md`; this skill is only for this repository.
 - If a required skill or MCP tool is unavailable, continue with the best local equivalent and clearly report the missing tool or authentication blocker.
 - Prefer repository-local commands and existing project tooling over adding new dependencies or services.
 - When a task is useful for learning Codex behavior, briefly report which skills, MCP tools, or local fallbacks were used.
@@ -282,9 +283,10 @@ Skip automatic issue creation only for trivial local-only changes, pure question
 After local tests pass and the reviewed changes are committed, deploy the current branch's committed `HEAD` to `robot-43:/tmp/personal-manager` when SSH access is available.
 
 Deployment requirements:
+- Use the repo-local skill at `.codex/skills/deploy-personal-manager-to-robot43/SKILL.md`.
 - Deploy only tracked, committed repository contents from the current branch.
 - Do not include local untracked files, local SQLite data, `.git`, or unrelated workspace artifacts.
-- Prefer a deterministic archive-style deployment, for example `git archive HEAD | ssh -o RemoteCommand=none -o RequestTTY=no robot-43 'rm -rf /tmp/personal-manager && mkdir -p /tmp/personal-manager && tar -x -C /tmp/personal-manager'`.
+- Prefer the skill's bundled script: `.codex/skills/deploy-personal-manager-to-robot43/scripts/deploy_to_robot43_tmp.sh`.
 - If the remote host has Go installed, run `go test ./...` in `/tmp/personal-manager` after deployment.
 - If the remote host cannot run tests, verify that `/tmp/personal-manager` contains the expected branch contents and report the missing remote dependency clearly.
 

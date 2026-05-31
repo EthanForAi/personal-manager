@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deploy Personal Manager"
+  short_description: "Deploy this repository to robot-43:/tmp/personal-manager."
+  default_prompt: "Deploy the current personal-manager branch to robot-43:/tmp/personal-manager after tests pass."
