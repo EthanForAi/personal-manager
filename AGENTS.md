@@ -4,6 +4,8 @@
 
 This is a small Go web service that provides HTTP APIs for managing personal information.
 
+This repository is also a hands-on practice project for deeply understanding and exercising Codex capabilities, including skills, MCP tools, GitHub workflow automation, testing, code review, and delivery discipline.
+
 The service supports common CRUD operations:
 - create personal data
 - read personal data
@@ -16,6 +18,13 @@ Data is persisted in local SQLite.
 
 Default expectation:
 Implement requested changes with minimal correct modifications, add or update meaningful tests, validate with Go test commands, fix failures, and only finish when everything passes and the code has been pushed to GitHub when a Git remote is available.
+
+## Skill and MCP Tooling
+
+- Use available Codex skills and MCP tools when they directly support the task, especially for GitHub workflow, code review, test automation, and repository delivery.
+- If a required skill or MCP tool is unavailable, continue with the best local equivalent and clearly report the missing tool or authentication blocker.
+- Prefer repository-local commands and existing project tooling over adding new dependencies or services.
+- When a task is useful for learning Codex behavior, briefly report which skills, MCP tools, or local fallbacks were used.
 
 ## Repository Context
 
@@ -37,6 +46,7 @@ Project goals:
 - support deterministic local tests
 - maintain clear API behavior
 - avoid unnecessary abstractions
+- use real development tasks to practice Codex capabilities end to end
 
 ## Non-Negotiable Rules
 
@@ -54,6 +64,10 @@ Project goals:
 ## Coding Standards
 
 - Follow idiomatic Go.
+- Keep exported names documented when they are part of the public package API.
+- Use `context.Context` for request-scoped operations and database calls when practical.
+- Return errors explicitly; do not panic for normal request, validation, or persistence failures.
+- Wrap internal errors where useful for debugging, but keep HTTP error responses stable and free of database details.
 - Keep code simple and readable.
 - Keep functions small and focused.
 - Avoid unnecessary dependencies.
@@ -61,7 +75,6 @@ Project goals:
 - Use clear JSON request and response bodies.
 - Prefer explicit error handling.
 - Return consistent error responses.
-- Use context-aware database calls when practical.
 - Keep SQLite schema changes small and covered by tests.
 
 ## API Expectations
@@ -192,6 +205,14 @@ Do not leak internal database details in API responses.
 
 Tests should cover behavior, not implementation details.
 
+- Every new feature, bug fix, or behavior change must include meaningful unit tests or integration-style tests.
+- Do not submit code changes with failing, skipped, trivial, or assertion-free tests.
+- Run the relevant focused tests while developing, then run the full suite before review:
+
+```sh
+go test ./...
+```
+
 Preferred coverage:
 - handler tests for request parsing, response status, and JSON body shape
 - service tests for validation and business rules
@@ -203,17 +224,74 @@ SQLite tests should be deterministic:
 - isolate test data between tests
 - avoid relying on test execution order
 
-Before finishing implementation work, run:
-
-```sh
-go test ./...
-```
-
 If formatting may have changed, run:
 
 ```sh
 gofmt -w <changed-go-files>
 ```
+
+## Branch Strategy
+
+Use `main` as the stable trunk branch.
+
+Do not develop features or bug fixes directly on `main` unless the user explicitly requests it.
+
+For every new feature, bug fix, or behavior change:
+
+1. Start from the latest `main`.
+2. Create a new dedicated branch named `codex/<task-name>`.
+3. Keep the branch focused on one feature, fix, or small related change set.
+4. Implement the change and update meaningful tests.
+5. Run `go test ./...` and fix failures before finishing.
+6. Run a code review pass before opening a PR.
+7. Fix any review findings, rerun the relevant tests, and repeat review if needed.
+8. Push the branch to GitHub.
+9. Open a pull request back into `main` when the change is ready for review.
+
+Branch naming examples:
+- `codex/add-person-tags`
+- `codex/fix-email-validation`
+- `codex/sqlite-schema`
+
+Use one branch per issue. If the worktree is already on `main`, create a new task branch before making code changes. Reuse an existing branch only when the user explicitly points to that branch for the same issue.
+
+## GitHub Issue and PR Workflow
+
+For every non-trivial feature, bug fix, or behavior change, create a new GitHub issue before implementation when GitHub access is available.
+
+Issue requirements:
+- Describe the problem or requested change clearly.
+- Include concrete acceptance criteria.
+- Link any relevant API behavior, validation rule, persistence change, or test expectation.
+- Associate exactly one implementation branch with the issue.
+
+PR requirements:
+- Push the task branch to GitHub.
+- Open a pull request from the task branch into `main`.
+- Include `Fixes #<issue-number>` in the PR body so GitHub closes the issue automatically after the PR is merged.
+- Summarize the implementation, code review result, and test command results, including `go test ./...`.
+
+Do not manually close the linked issue immediately after pushing the branch. The issue should close automatically when the PR containing `Fixes #<issue-number>` is merged. Do not close the PR after pushing; leave it open for review and merge unless the user explicitly asks to abandon the PR.
+
+Skip automatic issue creation only for trivial local-only changes, pure questions, exploratory analysis, or when the user explicitly asks not to create an issue. If GitHub access is unavailable, continue the local work and report the blocker clearly.
+
+## Code Review Gate
+
+Before opening a PR:
+- Review the diff for correctness, API compatibility, error handling, tests, and unintended file changes.
+- Prefer using an available code review skill or MCP tool when configured.
+- Treat review findings as blockers until fixed or explicitly documented as non-blocking.
+- Rerun `go test ./...` after fixing review findings that touch Go code.
+
+## Final Delivery Notes
+
+After completing a task, always report:
+- The issue number and PR URL when created.
+- The branch name.
+- The exact validation commands that were run and whether they passed.
+- The Codex skills, MCP tools, or local fallbacks used for the workflow.
+- How to start the service locally.
+- How to test the changed behavior manually, including example HTTP requests when relevant.
 
 ## Change Discipline
 
