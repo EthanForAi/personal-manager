@@ -16,33 +16,36 @@ import (
 func TestHandlerCRUD(t *testing.T) {
 	router := newTestRouter(t)
 
-	createBody := `{"userid":"u1","name":"Alice","email":"alice@example.com","phone":"13800138000"}`
+	createBody := `{"userid":"u1","name":"Alice","email":"alice@example.com","phone":"13800138000","introduction":"first profile"}`
 	rec := postJSON(router, "/create", createBody)
 	assertStatus(t, rec, http.StatusOK)
 	assertPerson(t, rec, model.Person{
-		UserID: "u1",
-		Name:   "Alice",
-		Email:  "alice@example.com",
-		Phone:  "13800138000",
+		UserID:       "u1",
+		Name:         "Alice",
+		Email:        "alice@example.com",
+		Phone:        "13800138000",
+		Introduction: "first profile",
 	})
 
 	rec = postJSON(router, "/read", `{"userid":"u1"}`)
 	assertStatus(t, rec, http.StatusOK)
 	assertPerson(t, rec, model.Person{
-		UserID: "u1",
-		Name:   "Alice",
-		Email:  "alice@example.com",
-		Phone:  "13800138000",
+		UserID:       "u1",
+		Name:         "Alice",
+		Email:        "alice@example.com",
+		Phone:        "13800138000",
+		Introduction: "first profile",
 	})
 
-	updateBody := `{"userid":"u1","name":"Alice Smith","email":"alice.smith@example.com","phone":"13900139000"}`
+	updateBody := `{"userid":"u1","name":"Alice Smith","email":"alice.smith@example.com","phone":"13900139000","introduction":"updated profile"}`
 	rec = postJSON(router, "/update", updateBody)
 	assertStatus(t, rec, http.StatusOK)
 	assertPerson(t, rec, model.Person{
-		UserID: "u1",
-		Name:   "Alice Smith",
-		Email:  "alice.smith@example.com",
-		Phone:  "13900139000",
+		UserID:       "u1",
+		Name:         "Alice Smith",
+		Email:        "alice.smith@example.com",
+		Phone:        "13900139000",
+		Introduction: "updated profile",
 	})
 
 	rec = postJSON(router, "/delete", `{"userid":"u1"}`)

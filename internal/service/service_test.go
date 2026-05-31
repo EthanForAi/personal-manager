@@ -73,20 +73,22 @@ func TestCreateNormalizesAndStoresPerson(t *testing.T) {
 	svc := New(st)
 
 	got, err := svc.Create(context.Background(), model.Person{
-		UserID: " u1 ",
-		Name:   " Alice ",
-		Email:  " alice@example.com ",
-		Phone:  " 13800138000 ",
+		UserID:       " u1 ",
+		Name:         " Alice ",
+		Email:        " alice@example.com ",
+		Phone:        " 13800138000 ",
+		Introduction: " first profile ",
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
 
 	want := model.Person{
-		UserID: "u1",
-		Name:   "Alice",
-		Email:  "alice@example.com",
-		Phone:  "13800138000",
+		UserID:       "u1",
+		Name:         "Alice",
+		Email:        "alice@example.com",
+		Phone:        "13800138000",
+		Introduction: "first profile",
 	}
 	if got != want {
 		t.Fatalf("Create() = %#v, want %#v", got, want)

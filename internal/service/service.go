@@ -97,6 +97,7 @@ func normalize(person model.Person) model.Person {
 	person.Name = strings.TrimSpace(person.Name)
 	person.Email = strings.TrimSpace(person.Email)
 	person.Phone = strings.TrimSpace(person.Phone)
+	person.Introduction = strings.TrimSpace(person.Introduction)
 	return person
 }
 
