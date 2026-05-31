@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"path/filepath"
 	"testing"
@@ -14,10 +15,11 @@ func TestStoreCreateGetUpdateDelete(t *testing.T) {
 	ctx := context.Background()
 
 	person := model.Person{
-		UserID: "u-1",
-		Name:   "Alice",
-		Email:  "alice@example.com",
-		Phone:  "13800138000",
+		UserID:       "u-1",
+		Name:         "Alice",
+		Email:        "alice@example.com",
+		Phone:        "13800138000",
+		Introduction: "first profile",
 	}
 	if err := st.Create(ctx, person); err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -36,10 +38,11 @@ func TestStoreCreateGetUpdateDelete(t *testing.T) {
 	}
 
 	updated := model.Person{
-		UserID: "u-1",
-		Name:   "Alice Smith",
-		Email:  "alice.smith@example.com",
-		Phone:  "13900139000",
+		UserID:       "u-1",
+		Name:         "Alice Smith",
+		Email:        "alice.smith@example.com",
+		Phone:        "13900139000",
+		Introduction: "updated profile",
 	}
 	if err := st.Update(ctx, updated); err != nil {
 		t.Fatalf("Update() error = %v", err)
@@ -82,6 +85,54 @@ func TestStoreMissingRecords(t *testing.T) {
 
 	if err := st.Delete(ctx, "missing"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("Delete() missing error = %v, want %v", err, ErrNotFound)
+	}
+}
+
+func TestOpenMigratesExistingDatabaseWithIntroduction(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "test.db")
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatalf("sql.Open() error = %v", err)
+	}
+	_, err = db.Exec(`
+CREATE TABLE personal_info (
+	userid TEXT PRIMARY KEY,
+	name TEXT NOT NULL,
+	email TEXT NOT NULL,
+	phone TEXT NOT NULL
+);
+INSERT INTO personal_info (userid, name, email, phone)
+VALUES ('u-1', 'Alice', 'alice@example.com', '13800138000')`)
+	if err != nil {
+		t.Fatalf("seed legacy schema error = %v", err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatalf("legacy db close error = %v", err)
+	}
+
+	st, err := Open(path)
+	if err != nil {
+		t.Fatalf("Open() legacy db error = %v", err)
+	}
+	t.Cleanup(func() {
+		if err := st.Close(); err != nil {
+			t.Fatalf("Close() error = %v", err)
+		}
+	})
+
+	got, err := st.Get(context.Background(), "u-1")
+	if err != nil {
+		t.Fatalf("Get() migrated row error = %v", err)
+	}
+	want := model.Person{
+		UserID:       "u-1",
+		Name:         "Alice",
+		Email:        "alice@example.com",
+		Phone:        "13800138000",
+		Introduction: "",
+	}
+	if got != want {
+		t.Fatalf("Get() migrated row = %#v, want %#v", got, want)
 	}
 }
 
