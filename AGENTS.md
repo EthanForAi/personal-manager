@@ -17,7 +17,7 @@ All APIs use the HTTP POST method for consistency.
 Data is persisted in local SQLite.
 
 Default expectation:
-Implement requested changes with minimal correct modifications, add or update meaningful tests, validate with Go test commands, fix failures, and only finish when everything passes and the code has been pushed to GitHub when a Git remote is available.
+Implement requested changes with minimal correct modifications, add or update meaningful tests, validate with Go test commands, fix failures, and only finish when everything passes, the code has been pushed to GitHub when a Git remote is available, and the current branch has been deployed to `robot-43:/tmp/personal-manager` when SSH access is available.
 
 ## Skill and MCP Tooling
 
@@ -245,8 +245,10 @@ For every new feature, bug fix, or behavior change:
 5. Run `go test ./...` and fix failures before finishing.
 6. Run a code review pass before opening a PR.
 7. Fix any review findings, rerun the relevant tests, and repeat review if needed.
-8. Push the branch to GitHub.
-9. Open a pull request back into `main` when the change is ready for review.
+8. Commit the reviewed and tested changes.
+9. Push the branch to GitHub.
+10. Deploy the current branch to `robot-43:/tmp/personal-manager`.
+11. Open or update a pull request back into `main` when the change is ready for review.
 
 Branch naming examples:
 - `codex/add-person-tags`
@@ -275,6 +277,17 @@ Do not manually close the linked issue immediately after pushing the branch. The
 
 Skip automatic issue creation only for trivial local-only changes, pure questions, exploratory analysis, or when the user explicitly asks not to create an issue. If GitHub access is unavailable, continue the local work and report the blocker clearly.
 
+## Robot-43 Deployment
+
+After local tests pass and the reviewed changes are committed, deploy the current branch's committed `HEAD` to `robot-43:/tmp/personal-manager` when SSH access is available.
+
+Deployment requirements:
+- Deploy only tracked, committed repository contents from the current branch.
+- Do not include local untracked files, local SQLite data, `.git`, or unrelated workspace artifacts.
+- Prefer a deterministic archive-style deployment, for example `git archive HEAD | ssh -o RemoteCommand=none -o RequestTTY=no robot-43 'rm -rf /tmp/personal-manager && mkdir -p /tmp/personal-manager && tar -x -C /tmp/personal-manager'`.
+- If the remote host has Go installed, run `go test ./...` in `/tmp/personal-manager` after deployment.
+- If the remote host cannot run tests, verify that `/tmp/personal-manager` contains the expected branch contents and report the missing remote dependency clearly.
+
 ## Code Review Gate
 
 Before opening a PR:
@@ -290,6 +303,7 @@ After completing a task, always report:
 - The branch name.
 - The exact validation commands that were run and whether they passed.
 - The Codex skills, MCP tools, or local fallbacks used for the workflow.
+- The `robot-43:/tmp/personal-manager` deployment result, including whether remote tests were run or why they could not run.
 - How to start the service locally.
 - How to test the changed behavior manually, including example HTTP requests when relevant.
 
