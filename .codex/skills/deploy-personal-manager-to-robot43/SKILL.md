@@ -29,6 +29,7 @@ The script runs:
 - `git diff --check`
 - `go test ./...`
 - `git archive HEAD | ssh ... tar -x -C /tmp/personal-manager`
+- remote `go test ./...` with `/usr/local/go/bin` added to `PATH`
 
 It deploys only tracked, committed files from `HEAD`; it does not copy `.git`, local SQLite data, untracked files, or workspace artifacts.
 

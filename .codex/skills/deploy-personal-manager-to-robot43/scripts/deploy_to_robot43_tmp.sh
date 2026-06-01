@@ -41,6 +41,7 @@ printf -v quoted_sha "%q" "$sha"
 
 remote_script="
 set -e
+export PATH=\"/usr/local/go/bin:\$PATH\"
 rm -rf $remote_dir
 mkdir -p $remote_dir
 tar -x -C $remote_dir
@@ -50,6 +51,7 @@ echo DEPLOYED_BRANCH=$quoted_branch
 echo DEPLOYED_SHA=$quoted_sha
 if command -v go >/dev/null 2>&1; then
   echo Running remote go test ./...
+  go version
   go test ./...
 else
   echo REMOTE_GO_MISSING
