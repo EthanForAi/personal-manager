@@ -16,6 +16,7 @@ type Service interface {
 	Read(ctx context.Context, userid string) (model.Person, error)
 	Update(ctx context.Context, person model.Person) (model.Person, error)
 	Delete(ctx context.Context, userid string) error
+	Check(ctx context.Context, userid string) (bool, error)
 }
 
 type Handler struct {
@@ -40,6 +41,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("/read", h.handleRead)
 	mux.HandleFunc("/update", h.handleUpdate)
 	mux.HandleFunc("/delete", h.handleDelete)
+	mux.HandleFunc("/check", h.handleCheck)
 	return mux
 }
 
@@ -116,6 +118,25 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, model.DeleteResponse{Deleted: true})
+}
+
+func (h *Handler) handleCheck(w http.ResponseWriter, r *http.Request) {
+	if !requirePost(w, r) {
+		return
+	}
+
+	var req idRequest
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+
+	exists, err := h.service.Check(r.Context(), req.UserID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, model.CheckResponse{Exists: exists})
 }
 
 func requirePost(w http.ResponseWriter, r *http.Request) bool {
