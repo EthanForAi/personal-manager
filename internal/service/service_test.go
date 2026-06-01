@@ -20,7 +20,7 @@ func TestCreateValidatesRequiredFields(t *testing.T) {
 			person: model.Person{
 				Name:  "Alice",
 				Email: "alice@example.com",
-				Phone: "13800138000",
+				Phone: "8613800138000",
 			},
 			wantErr: "userid is required",
 		},
@@ -29,7 +29,7 @@ func TestCreateValidatesRequiredFields(t *testing.T) {
 			person: model.Person{
 				UserID: "u1",
 				Email:  "alice@example.com",
-				Phone:  "13800138000",
+				Phone:  "8613800138000",
 			},
 			wantErr: "name is required",
 		},
@@ -38,7 +38,7 @@ func TestCreateValidatesRequiredFields(t *testing.T) {
 			person: model.Person{
 				UserID: "u1",
 				Name:   "Alice",
-				Phone:  "13800138000",
+				Phone:  "8613800138000",
 			},
 			wantErr: "email is required",
 		},
@@ -76,7 +76,7 @@ func TestCreateNormalizesAndStoresPerson(t *testing.T) {
 		UserID: " u1 ",
 		Name:   " Alice ",
 		Email:  " alice@example.com ",
-		Phone:  " 13800138000 ",
+		Phone:  " +8613800138000 ",
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -86,7 +86,7 @@ func TestCreateNormalizesAndStoresPerson(t *testing.T) {
 		UserID: "u1",
 		Name:   "Alice",
 		Email:  "alice@example.com",
-		Phone:  "13800138000",
+		Phone:  "+8613800138000",
 	}
 	if got != want {
 		t.Fatalf("Create() = %#v, want %#v", got, want)
@@ -117,7 +117,7 @@ func TestCreateValidatesUserIDFormat(t *testing.T) {
 				UserID: tt.userid,
 				Name:   "Alice",
 				Email:  "alice@example.com",
-				Phone:  "13800138000",
+				Phone:  "8613800138000",
 			})
 			if !errors.Is(err, ErrValidation) {
 				t.Fatalf("Create() error = %v, want validation error", err)
@@ -149,7 +149,7 @@ func TestCreateValidatesEmailFormat(t *testing.T) {
 				UserID: "u1",
 				Name:   "Alice",
 				Email:  tt.email,
-				Phone:  "13800138000",
+				Phone:  "8613800138000",
 			})
 			if !errors.Is(err, ErrValidation) {
 				t.Fatalf("Create() error = %v, want validation error", err)
@@ -166,11 +166,11 @@ func TestCreateValidatesMainlandChinaMobilePhone(t *testing.T) {
 		name  string
 		phone string
 	}{
-		{name: "invalid prefix", phone: "12800138000"},
-		{name: "too short", phone: "1380013800"},
-		{name: "too long", phone: "138001380000"},
-		{name: "contains non digit", phone: "1380013800a"},
-		{name: "with country code", phone: "+8613800138000"},
+		{name: "missing country code", phone: "13800138000"},
+		{name: "invalid mobile prefix", phone: "8612800138000"},
+		{name: "too short", phone: "861380013800"},
+		{name: "too long", phone: "86138001380000"},
+		{name: "contains non digit", phone: "861380013800a"},
 	}
 
 	for _, tt := range tests {
@@ -186,8 +186,80 @@ func TestCreateValidatesMainlandChinaMobilePhone(t *testing.T) {
 			if !errors.Is(err, ErrValidation) {
 				t.Fatalf("Create() error = %v, want validation error", err)
 			}
-			if err.Error() != "phone must be a valid mainland China mobile number" {
+			if err.Error() != "phone must be a valid mainland China mobile number with 86 country code" {
 				t.Fatalf("Create() error = %q, want phone validation message", err.Error())
+			}
+		})
+	}
+}
+
+func TestCreateAcceptsMainlandChinaMobilePhoneWithCountryCode(t *testing.T) {
+	tests := []struct {
+		name  string
+		phone string
+	}{
+		{name: "86 prefix", phone: "8613800138000"},
+		{name: "plus 86 prefix", phone: "+8613900139000"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := New(&fakeStore{})
+
+			got, err := svc.Create(context.Background(), model.Person{
+				UserID: "u1",
+				Name:   "Alice",
+				Email:  "alice@example.com",
+				Phone:  tt.phone,
+			})
+			if err != nil {
+				t.Fatalf("Create() error = %v", err)
+			}
+			if got.Phone != tt.phone {
+				t.Fatalf("Create() phone = %q, want %q", got.Phone, tt.phone)
+			}
+		})
+	}
+}
+
+func TestUpdateValidatesContactFields(t *testing.T) {
+	tests := []struct {
+		name    string
+		person  model.Person
+		wantErr string
+	}{
+		{
+			name: "invalid email",
+			person: model.Person{
+				UserID: "u1",
+				Name:   "Alice",
+				Email:  "alice.example.com",
+				Phone:  "8613800138000",
+			},
+			wantErr: "email must be a valid email address",
+		},
+		{
+			name: "invalid phone",
+			person: model.Person{
+				UserID: "u1",
+				Name:   "Alice",
+				Email:  "alice@example.com",
+				Phone:  "13800138000",
+			},
+			wantErr: "phone must be a valid mainland China mobile number with 86 country code",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := New(&fakeStore{})
+
+			_, err := svc.Update(context.Background(), tt.person)
+			if !errors.Is(err, ErrValidation) {
+				t.Fatalf("Update() error = %v, want validation error", err)
+			}
+			if err.Error() != tt.wantErr {
+				t.Fatalf("Update() error = %q, want %q", err.Error(), tt.wantErr)
 			}
 		})
 	}
@@ -200,7 +272,7 @@ func TestCreateDuplicateUserIDReturnsValidationError(t *testing.T) {
 		UserID: "u1",
 		Name:   "Alice",
 		Email:  "alice@example.com",
-		Phone:  "13800138000",
+		Phone:  "8613800138000",
 	})
 	if !errors.Is(err, ErrValidation) {
 		t.Fatalf("Create() error = %v, want validation error", err)
