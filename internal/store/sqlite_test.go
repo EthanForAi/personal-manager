@@ -23,6 +23,22 @@ func TestStoreCreateGetUpdateDelete(t *testing.T) {
 		t.Fatalf("Create() error = %v", err)
 	}
 
+	exists, err := st.Exists(ctx, person.UserID)
+	if err != nil {
+		t.Fatalf("Exists() error = %v", err)
+	}
+	if !exists {
+		t.Fatalf("Exists() = false, want true")
+	}
+
+	exists, err = st.Exists(ctx, "missing")
+	if err != nil {
+		t.Fatalf("Exists() missing error = %v", err)
+	}
+	if exists {
+		t.Fatalf("Exists() missing = true, want false")
+	}
+
 	got, err := st.Get(ctx, person.UserID)
 	if err != nil {
 		t.Fatalf("Get() error = %v", err)
@@ -55,6 +71,14 @@ func TestStoreCreateGetUpdateDelete(t *testing.T) {
 
 	if err := st.Delete(ctx, updated.UserID); err != nil {
 		t.Fatalf("Delete() error = %v", err)
+	}
+
+	exists, err = st.Exists(ctx, updated.UserID)
+	if err != nil {
+		t.Fatalf("Exists() deleted error = %v", err)
+	}
+	if exists {
+		t.Fatalf("Exists() deleted = true, want false")
 	}
 
 	if _, err := st.Get(ctx, updated.UserID); !errors.Is(err, ErrNotFound) {

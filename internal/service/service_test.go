@@ -220,6 +220,10 @@ func TestReadAndDeleteValidateUserID(t *testing.T) {
 	if err := svc.Delete(context.Background(), " "); !errors.Is(err, ErrValidation) {
 		t.Fatalf("Delete() error = %v, want validation error", err)
 	}
+
+	if _, err := svc.Check(context.Background(), " "); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Check() error = %v, want validation error", err)
+	}
 }
 
 func TestReadAndDeleteValidateUserIDFormat(t *testing.T) {
@@ -232,11 +236,34 @@ func TestReadAndDeleteValidateUserIDFormat(t *testing.T) {
 	if err := svc.Delete(context.Background(), "user-1"); !errors.Is(err, ErrValidation) {
 		t.Fatalf("Delete() error = %v, want validation error", err)
 	}
+
+	if _, err := svc.Check(context.Background(), "user_1"); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Check() error = %v, want validation error", err)
+	}
+}
+
+func TestCheckNormalizesUserIDAndReturnsExists(t *testing.T) {
+	st := &fakeStore{exists: true}
+	svc := New(st)
+
+	got, err := svc.Check(context.Background(), " u1 ")
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if !got {
+		t.Fatalf("Check() = false, want true")
+	}
+	if st.existsUserID != "u1" {
+		t.Fatalf("exists userid = %q, want %q", st.existsUserID, "u1")
+	}
 }
 
 type fakeStore struct {
-	created   model.Person
-	createErr error
+	created      model.Person
+	createErr    error
+	exists       bool
+	existsUserID string
+	existsErr    error
 }
 
 func (f *fakeStore) Create(_ context.Context, person model.Person) error {
@@ -254,4 +281,9 @@ func (f *fakeStore) Update(_ context.Context, person model.Person) error {
 
 func (f *fakeStore) Delete(_ context.Context, userid string) error {
 	return nil
+}
+
+func (f *fakeStore) Exists(_ context.Context, userid string) (bool, error) {
+	f.existsUserID = userid
+	return f.exists, f.existsErr
 }
