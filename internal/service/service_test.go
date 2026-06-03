@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"personal-manager/internal/model"
@@ -126,6 +127,73 @@ func TestCreateValidatesUserIDFormat(t *testing.T) {
 				t.Fatalf("Create() error = %q, want userid validation message", err.Error())
 			}
 		})
+	}
+}
+
+func TestCreateValidatesUserIDLength(t *testing.T) {
+	tests := []struct {
+		name   string
+		person model.Person
+	}{
+		{
+			name: "create over limit",
+			person: model.Person{
+				UserID: "u" + strings.Repeat("1", maxUserIDLength),
+				Name:   "Alice",
+				Email:  "alice@example.com",
+				Phone:  "13800138000",
+			},
+		},
+		{
+			name: "update over limit",
+			person: model.Person{
+				UserID: "u" + strings.Repeat("2", maxUserIDLength),
+				Name:   "Alice",
+				Email:  "alice@example.com",
+				Phone:  "13800138000",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := New(&fakeStore{})
+
+			var err error
+			if tt.name == "create over limit" {
+				_, err = svc.Create(context.Background(), tt.person)
+			} else {
+				_, err = svc.Update(context.Background(), tt.person)
+			}
+			if !errors.Is(err, ErrValidation) {
+				t.Fatalf("error = %v, want validation error", err)
+			}
+			if err.Error() != "userid must be no more than 32 characters" {
+				t.Fatalf("error = %q, want userid length validation message", err.Error())
+			}
+		})
+	}
+}
+
+func TestCreateAllowsUserIDAtLengthLimit(t *testing.T) {
+	st := &fakeStore{}
+	svc := New(st)
+	userid := "u" + strings.Repeat("1", maxUserIDLength-1)
+
+	got, err := svc.Create(context.Background(), model.Person{
+		UserID: userid,
+		Name:   "Alice",
+		Email:  "alice@example.com",
+		Phone:  "13800138000",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if got.UserID != userid {
+		t.Fatalf("Create() userid = %q, want %q", got.UserID, userid)
+	}
+	if st.created.UserID != userid {
+		t.Fatalf("stored userid = %q, want %q", st.created.UserID, userid)
 	}
 }
 
@@ -275,6 +343,7 @@ func TestReadAndDeleteValidateUserID(t *testing.T) {
 
 func TestReadAndDeleteValidateUserIDFormat(t *testing.T) {
 	svc := New(&fakeStore{})
+	tooLongUserID := "u" + strings.Repeat("1", maxUserIDLength)
 
 	if _, err := svc.Read(context.Background(), "1user"); !errors.Is(err, ErrValidation) {
 		t.Fatalf("Read() error = %v, want validation error", err)
@@ -286,6 +355,18 @@ func TestReadAndDeleteValidateUserIDFormat(t *testing.T) {
 
 	if _, err := svc.Check(context.Background(), "user_1"); !errors.Is(err, ErrValidation) {
 		t.Fatalf("Check() error = %v, want validation error", err)
+	}
+
+	if _, err := svc.Read(context.Background(), tooLongUserID); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Read() long userid error = %v, want validation error", err)
+	}
+
+	if err := svc.Delete(context.Background(), tooLongUserID); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Delete() long userid error = %v, want validation error", err)
+	}
+
+	if _, err := svc.Check(context.Background(), tooLongUserID); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Check() long userid error = %v, want validation error", err)
 	}
 }
 
