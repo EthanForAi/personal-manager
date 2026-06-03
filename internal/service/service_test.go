@@ -129,6 +129,53 @@ func TestCreateValidatesUserIDFormat(t *testing.T) {
 	}
 }
 
+func TestCreateValidatesNameDoesNotContainDigits(t *testing.T) {
+	tests := []struct {
+		name       string
+		personName string
+	}{
+		{name: "digit at end", personName: "Alice1"},
+		{name: "digit in middle", personName: "Al1ce"},
+		{name: "digit at start", personName: "1Alice"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := New(&fakeStore{})
+
+			_, err := svc.Create(context.Background(), model.Person{
+				UserID: "u1",
+				Name:   tt.personName,
+				Email:  "alice@example.com",
+				Phone:  "13800138000",
+			})
+			if !errors.Is(err, ErrValidation) {
+				t.Fatalf("Create() error = %v, want validation error", err)
+			}
+			if err.Error() != "name must not contain digits" {
+				t.Fatalf("Create() error = %q, want name digit validation message", err.Error())
+			}
+		})
+	}
+}
+
+func TestUpdateValidatesNameDoesNotContainDigits(t *testing.T) {
+	svc := New(&fakeStore{})
+
+	_, err := svc.Update(context.Background(), model.Person{
+		UserID: "u1",
+		Name:   "Alice1",
+		Email:  "alice@example.com",
+		Phone:  "13800138000",
+	})
+	if !errors.Is(err, ErrValidation) {
+		t.Fatalf("Update() error = %v, want validation error", err)
+	}
+	if err.Error() != "name must not contain digits" {
+		t.Fatalf("Update() error = %q, want name digit validation message", err.Error())
+	}
+}
+
 func TestCreateValidatesEmailFormat(t *testing.T) {
 	tests := []struct {
 		name  string
