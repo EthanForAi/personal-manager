@@ -223,18 +223,22 @@ Do not develop features or bug fixes directly on `main` unless the user explicit
 
 For every new feature or bug fix:
 
-1. Start from the latest `main`.
-2. Create a dedicated branch named `codex/<task-name>`.
-3. Keep the branch focused on one feature, fix, or small related change set.
-4. Implement the change and update meaningful tests.
-5. Run `go test ./...` and fix failures before finishing.
-6. Push the branch to GitHub.
-7. Open a pull request back into `main` when the change is ready for review.
+1. Create a GitHub issue before starting implementation work.
+2. Write the requirement and clear acceptance criteria in the issue.
+3. Start from the latest `main`.
+4. Create a dedicated branch named `codex/<issue-number>-<task-name>` when practical.
+5. Keep the branch focused on one feature, fix, or small related change set.
+6. Implement the change and update meaningful tests.
+7. Run `go test ./...` and fix failures before finishing.
+8. Commit with a message or body that references the issue, such as `Refs #17`.
+9. Push the branch to GitHub.
+10. Open a pull request back into `main` when the change is ready for review.
+11. Reference the issue in the pull request, and use `Closes #<issue-number>` when the PR should close it on merge.
 
 Branch naming examples:
-- `codex/add-person-tags`
-- `codex/fix-email-validation`
-- `codex/sqlite-schema`
+- `codex/17-add-person-tags`
+- `codex/18-fix-email-validation`
+- `codex/19-sqlite-schema`
 
 If a branch already exists for the current task, continue using that branch instead of creating a duplicate. If the worktree is already on `main`, create a new task branch before making code changes.
 
