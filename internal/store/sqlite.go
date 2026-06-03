@@ -126,3 +126,18 @@ WHERE userid = ?`, userid)
 
 	return nil
 }
+
+func (s *Store) Exists(ctx context.Context, userid string) (bool, error) {
+	var exists bool
+	err := s.db.QueryRowContext(ctx, `
+SELECT EXISTS(
+	SELECT 1
+	FROM personal_info
+	WHERE userid = ?
+)`, userid).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}

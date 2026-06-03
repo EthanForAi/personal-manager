@@ -27,7 +27,7 @@ func TestCreateValidatesRequiredFields(t *testing.T) {
 		{
 			name: "missing name",
 			person: model.Person{
-				UserID: "u-1",
+				UserID: "u1",
 				Email:  "alice@example.com",
 				Phone:  "13800138000",
 			},
@@ -36,7 +36,7 @@ func TestCreateValidatesRequiredFields(t *testing.T) {
 		{
 			name: "missing email",
 			person: model.Person{
-				UserID: "u-1",
+				UserID: "u1",
 				Name:   "Alice",
 				Phone:  "13800138000",
 			},
@@ -45,7 +45,7 @@ func TestCreateValidatesRequiredFields(t *testing.T) {
 		{
 			name: "missing phone",
 			person: model.Person{
-				UserID: "u-1",
+				UserID: "u1",
 				Name:   "Alice",
 				Email:  "alice@example.com",
 			},
@@ -73,7 +73,7 @@ func TestCreateNormalizesAndStoresPerson(t *testing.T) {
 	svc := New(st)
 
 	got, err := svc.Create(context.Background(), model.Person{
-		UserID: " u-1 ",
+		UserID: " u1 ",
 		Name:   " Alice ",
 		Email:  " alice@example.com ",
 		Phone:  " 13800138000 ",
@@ -83,7 +83,7 @@ func TestCreateNormalizesAndStoresPerson(t *testing.T) {
 	}
 
 	want := model.Person{
-		UserID: "u-1",
+		UserID: "u1",
 		Name:   "Alice",
 		Email:  "alice@example.com",
 		Phone:  "13800138000",
@@ -145,7 +145,7 @@ func TestCreateValidatesEmailFormat(t *testing.T) {
 			svc := New(&fakeStore{})
 
 			_, err := svc.Create(context.Background(), model.Person{
-				UserID: "u-1",
+				UserID: "u1",
 				Name:   "Alice",
 				Email:  tt.email,
 				Phone:  "13800138000",
@@ -177,7 +177,7 @@ func TestCreateValidatesMainlandChinaMobilePhone(t *testing.T) {
 			svc := New(&fakeStore{})
 
 			_, err := svc.Create(context.Background(), model.Person{
-				UserID: "u-1",
+				UserID: "u1",
 				Name:   "Alice",
 				Email:  "alice@example.com",
 				Phone:  tt.phone,
@@ -196,7 +196,7 @@ func TestCreateDuplicateUserIDReturnsValidationError(t *testing.T) {
 	svc := New(&fakeStore{createErr: store.ErrDuplicate})
 
 	_, err := svc.Create(context.Background(), model.Person{
-		UserID: "u-1",
+		UserID: "u1",
 		Name:   "Alice",
 		Email:  "alice@example.com",
 		Phone:  "13800138000",
@@ -219,11 +219,50 @@ func TestReadAndDeleteValidateUserID(t *testing.T) {
 	if err := svc.Delete(context.Background(), " "); !errors.Is(err, ErrValidation) {
 		t.Fatalf("Delete() error = %v, want validation error", err)
 	}
+
+	if _, err := svc.Check(context.Background(), " "); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Check() error = %v, want validation error", err)
+	}
+}
+
+func TestReadAndDeleteValidateUserIDFormat(t *testing.T) {
+	svc := New(&fakeStore{})
+
+	if _, err := svc.Read(context.Background(), "1user"); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Read() error = %v, want validation error", err)
+	}
+
+	if err := svc.Delete(context.Background(), "user-1"); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Delete() error = %v, want validation error", err)
+	}
+
+	if _, err := svc.Check(context.Background(), "user_1"); !errors.Is(err, ErrValidation) {
+		t.Fatalf("Check() error = %v, want validation error", err)
+	}
+}
+
+func TestCheckNormalizesUserIDAndReturnsExists(t *testing.T) {
+	st := &fakeStore{exists: true}
+	svc := New(st)
+
+	got, err := svc.Check(context.Background(), " u1 ")
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if !got {
+		t.Fatalf("Check() = false, want true")
+	}
+	if st.existsUserID != "u1" {
+		t.Fatalf("exists userid = %q, want %q", st.existsUserID, "u1")
+	}
 }
 
 type fakeStore struct {
-	created   model.Person
-	createErr error
+	created      model.Person
+	createErr    error
+	exists       bool
+	existsUserID string
+	existsErr    error
 }
 
 func (f *fakeStore) Create(_ context.Context, person model.Person) error {
@@ -241,4 +280,9 @@ func (f *fakeStore) Update(_ context.Context, person model.Person) error {
 
 func (f *fakeStore) Delete(_ context.Context, userid string) error {
 	return nil
+}
+
+func (f *fakeStore) Exists(_ context.Context, userid string) (bool, error) {
+	f.existsUserID = userid
+	return f.exists, f.existsErr
 }
