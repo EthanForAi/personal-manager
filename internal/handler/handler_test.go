@@ -97,9 +97,9 @@ func TestHandlerErrors(t *testing.T) {
 			name:      "invalid userid",
 			method:    http.MethodPost,
 			path:      "/create",
-			body:      `{"userid":"1user","name":"Alice","email":"alice@example.com","phone":"13800138000"}`,
+			body:      `{"userid":"user-1","name":"Alice","email":"alice@example.com","phone":"13800138000"}`,
 			wantCode:  http.StatusBadRequest,
-			wantError: "userid must start with a letter and contain letters and digits only",
+			wantError: "userid must contain letters and digits only",
 		},
 		{
 			name:      "invalid email",
@@ -137,9 +137,9 @@ func TestHandlerErrors(t *testing.T) {
 			name:      "check invalid userid",
 			method:    http.MethodPost,
 			path:      "/check",
-			body:      `{"userid":"1user"}`,
+			body:      `{"userid":"user-1"}`,
 			wantCode:  http.StatusBadRequest,
-			wantError: "userid must start with a letter and contain letters and digits only",
+			wantError: "userid must contain letters and digits only",
 		},
 		{
 			name:      "check invalid JSON",

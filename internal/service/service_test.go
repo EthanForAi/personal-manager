@@ -101,7 +101,6 @@ func TestCreateValidatesUserIDFormat(t *testing.T) {
 		name   string
 		userid string
 	}{
-		{name: "starts with digit", userid: "1user"},
 		{name: "contains hyphen", userid: "u-1"},
 		{name: "contains underscore", userid: "u_1"},
 		{name: "contains space", userid: "user 1"},
@@ -122,10 +121,48 @@ func TestCreateValidatesUserIDFormat(t *testing.T) {
 			if !errors.Is(err, ErrValidation) {
 				t.Fatalf("Create() error = %v, want validation error", err)
 			}
-			if err.Error() != "userid must start with a letter and contain letters and digits only" {
+			if err.Error() != "userid must contain letters and digits only" {
 				t.Fatalf("Create() error = %q, want userid validation message", err.Error())
 			}
 		})
+	}
+}
+
+func TestCreateAllowsUserIDStartingWithDigit(t *testing.T) {
+	st := &fakeStore{}
+	svc := New(st)
+
+	got, err := svc.Create(context.Background(), model.Person{
+		UserID: "1user",
+		Name:   "Alice",
+		Email:  "alice@example.com",
+		Phone:  "13800138000",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if got.UserID != "1user" {
+		t.Fatalf("Create().UserID = %q, want %q", got.UserID, "1user")
+	}
+	if st.created.UserID != "1user" {
+		t.Fatalf("stored userid = %q, want %q", st.created.UserID, "1user")
+	}
+}
+
+func TestUpdateValidatesUserIDFormat(t *testing.T) {
+	svc := New(&fakeStore{})
+
+	_, err := svc.Update(context.Background(), model.Person{
+		UserID: "user-1",
+		Name:   "Alice",
+		Email:  "alice@example.com",
+		Phone:  "13800138000",
+	})
+	if !errors.Is(err, ErrValidation) {
+		t.Fatalf("Update() error = %v, want validation error", err)
+	}
+	if err.Error() != "userid must contain letters and digits only" {
+		t.Fatalf("Update() error = %q, want userid validation message", err.Error())
 	}
 }
 
@@ -229,7 +266,7 @@ func TestReadAndDeleteValidateUserID(t *testing.T) {
 func TestReadAndDeleteValidateUserIDFormat(t *testing.T) {
 	svc := New(&fakeStore{})
 
-	if _, err := svc.Read(context.Background(), "1user"); !errors.Is(err, ErrValidation) {
+	if _, err := svc.Read(context.Background(), "user-1"); !errors.Is(err, ErrValidation) {
 		t.Fatalf("Read() error = %v, want validation error", err)
 	}
 

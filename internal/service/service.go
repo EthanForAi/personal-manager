@@ -14,7 +14,7 @@ import (
 var ErrValidation = errors.New("validation failed")
 
 var (
-	userIDPattern              = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+	userIDPattern              = regexp.MustCompile(`^[A-Za-z0-9]+$`)
 	mainlandChinaMobilePattern = regexp.MustCompile(`^1[3-9][0-9]{9}$`)
 )
 
@@ -136,7 +136,7 @@ func validateUserID(userid string) error {
 	case userid == "":
 		return validationError("userid is required")
 	case !userIDPattern.MatchString(userid):
-		return validationError("userid must start with a letter and contain letters and digits only")
+		return validationError("userid must contain letters and digits only")
 	default:
 		return nil
 	}
