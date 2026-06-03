@@ -109,6 +109,65 @@ func TestStoreMissingRecords(t *testing.T) {
 	}
 }
 
+func TestStoreRejectsDuplicatePhoneOnCreate(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+
+	if err := st.Create(ctx, model.Person{
+		UserID: "u1",
+		Name:   "Alice",
+		Email:  "alice@example.com",
+		Phone:  "13800138000",
+	}); err != nil {
+		t.Fatalf("Create() first error = %v", err)
+	}
+
+	err := st.Create(ctx, model.Person{
+		UserID: "u2",
+		Name:   "Bob",
+		Email:  "bob@example.com",
+		Phone:  "13800138000",
+	})
+	if !errors.Is(err, ErrPhoneDuplicate) {
+		t.Fatalf("Create() duplicate phone error = %v, want %v", err, ErrPhoneDuplicate)
+	}
+}
+
+func TestStoreRejectsDuplicatePhoneOnUpdate(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+
+	alice := model.Person{
+		UserID: "u1",
+		Name:   "Alice",
+		Email:  "alice@example.com",
+		Phone:  "13800138000",
+	}
+	if err := st.Create(ctx, alice); err != nil {
+		t.Fatalf("Create() alice error = %v", err)
+	}
+
+	bob := model.Person{
+		UserID: "u2",
+		Name:   "Bob",
+		Email:  "bob@example.com",
+		Phone:  "13900139000",
+	}
+	if err := st.Create(ctx, bob); err != nil {
+		t.Fatalf("Create() bob error = %v", err)
+	}
+
+	bob.Phone = alice.Phone
+	if err := st.Update(ctx, bob); !errors.Is(err, ErrPhoneDuplicate) {
+		t.Fatalf("Update() duplicate phone error = %v, want %v", err, ErrPhoneDuplicate)
+	}
+
+	alice.Name = "Alice Smith"
+	if err := st.Update(ctx, alice); err != nil {
+		t.Fatalf("Update() same phone error = %v", err)
+	}
+}
+
 func newTestStore(t *testing.T) *Store {
 	t.Helper()
 

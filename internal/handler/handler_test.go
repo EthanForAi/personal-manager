@@ -66,6 +66,27 @@ func TestHandlerCRUD(t *testing.T) {
 	assertError(t, rec, "record not found")
 }
 
+func TestHandlerRejectsDuplicatePhone(t *testing.T) {
+	router := newTestRouter(t)
+
+	rec := postJSON(router, "/create", `{"userid":"u1","name":"Alice","email":"alice@example.com","phone":"13800138000"}`)
+	assertStatus(t, rec, http.StatusOK)
+
+	rec = postJSON(router, "/create", `{"userid":"u2","name":"Bob","email":"bob@example.com","phone":"13800138000"}`)
+	assertStatus(t, rec, http.StatusBadRequest)
+	assertError(t, rec, "phone already exists")
+
+	rec = postJSON(router, "/create", `{"userid":"u2","name":"Bob","email":"bob@example.com","phone":"13900139000"}`)
+	assertStatus(t, rec, http.StatusOK)
+
+	rec = postJSON(router, "/update", `{"userid":"u2","name":"Bob","email":"bob@example.com","phone":"13800138000"}`)
+	assertStatus(t, rec, http.StatusBadRequest)
+	assertError(t, rec, "phone already exists")
+
+	rec = postJSON(router, "/update", `{"userid":"u1","name":"Alice Smith","email":"alice.smith@example.com","phone":"13800138000"}`)
+	assertStatus(t, rec, http.StatusOK)
+}
+
 func TestHandlerErrors(t *testing.T) {
 	router := newTestRouter(t)
 
