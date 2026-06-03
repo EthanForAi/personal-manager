@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Personal Manager Paper Prototype</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="https://unpkg.com/papercss@1.9.2/dist/paper.min.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="pm-shell">
+      <header class="pm-topbar">
+        <div>
+          <p class="pm-kicker">Personal Manager</p>
+          <h1>个人信息工作台</h1>
+        </div>
+        <div class="pm-endpoint">
+          <span class="badge secondary">POST API</span>
+          <code>localhost:8080</code>
+        </div>
+      </header>
+
+      <main class="pm-workspace">
+        <section class="pm-panel pm-form-panel" aria-labelledby="form-title">
+          <div class="pm-section-title">
+            <div>
+              <p class="pm-kicker">Record Editor</p>
+              <h2 id="form-title">资料操作</h2>
+            </div>
+            <span id="active-endpoint" class="badge">/create</span>
+          </div>
+
+          <nav class="pm-action-tabs" aria-label="API actions">
+            <button type="button" class="pm-action is-active" data-action="create">新建</button>
+            <button type="button" class="pm-action" data-action="read">查询</button>
+            <button type="button" class="pm-action" data-action="update">更新</button>
+            <button type="button" class="pm-action" data-action="delete">删除</button>
+            <button type="button" class="pm-action" data-action="check">检查</button>
+          </nav>
+
+          <form id="person-form" class="pm-person-form" novalidate>
+            <label for="userid">UserID</label>
+            <input id="userid" name="userid" maxlength="32" placeholder="alice01" autocomplete="off">
+            <p class="pm-field-note">字母开头，最多 32 位，只含字母和数字</p>
+
+            <div class="pm-field-grid" data-full-fields>
+              <div>
+                <label for="name">姓名</label>
+                <input id="name" name="name" placeholder="Alice" autocomplete="off">
+              </div>
+              <div>
+                <label for="phone">手机号</label>
+                <input id="phone" name="phone" placeholder="13800138000" inputmode="numeric" autocomplete="off">
+              </div>
+            </div>
+
+            <div data-full-fields>
+              <label for="email">邮箱</label>
+              <input id="email" name="email" placeholder="alice@example.com" autocomplete="off">
+            </div>
+
+            <div class="pm-form-actions">
+              <button id="submit-action" type="submit">新建资料</button>
+              <button id="reset-action" type="button" class="btn-small">清空</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="pm-panel pm-result-panel" aria-labelledby="result-title">
+          <div class="pm-section-title">
+            <div>
+              <p class="pm-kicker">Preview</p>
+              <h2 id="result-title">请求与结果</h2>
+            </div>
+            <span id="status-badge" class="badge success">Ready</span>
+          </div>
+
+          <article id="status-card" class="pm-status-card">
+            <span class="pm-status-dot" aria-hidden="true"></span>
+            <div>
+              <h3 id="status-title">等待操作</h3>
+              <p id="status-copy">当前设计稿使用原型数据，接口字段已对齐后端。</p>
+            </div>
+          </article>
+
+          <div class="pm-code-grid">
+            <div>
+              <p class="pm-code-label">Request</p>
+              <pre id="request-preview"></pre>
+            </div>
+            <div>
+              <p class="pm-code-label">Response</p>
+              <pre id="response-preview"></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="pm-panel pm-records-panel" aria-labelledby="records-title">
+          <div class="pm-section-title">
+            <div>
+              <p class="pm-kicker">Local Draft</p>
+              <h2 id="records-title">记录草稿</h2>
+            </div>
+            <span id="record-count" class="badge secondary">0</span>
+          </div>
+
+          <div id="record-list" class="pm-record-list" aria-live="polite"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

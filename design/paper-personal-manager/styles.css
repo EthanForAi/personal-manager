@@ -1,0 +1,356 @@
+:root {
+  --pm-paper: #fbf3dd;
+  --pm-sheet: #fffaf0;
+  --pm-ink: #22211f;
+  --pm-muted: #6e675d;
+  --pm-line: #28231e;
+  --pm-blue: #2e6f88;
+  --pm-green: #4f8a5f;
+  --pm-coral: #d76f56;
+  --pm-yellow: #f2c96d;
+  --pm-shadow: rgba(43, 36, 28, 0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.48)),
+    repeating-linear-gradient(0deg, transparent 0 31px, rgba(46, 111, 136, 0.13) 32px),
+    var(--pm-paper);
+  color: var(--pm-ink);
+}
+
+button,
+input,
+pre,
+code {
+  letter-spacing: 0;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--pm-yellow);
+  outline-offset: 3px;
+}
+
+.pm-shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 32px;
+}
+
+.pm-topbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 104px;
+  padding: 18px 22px 20px;
+  background: rgba(255, 250, 240, 0.84);
+  border: 2px solid var(--pm-line);
+  box-shadow: 7px 7px 0 var(--pm-shadow);
+  transform: rotate(-0.35deg);
+}
+
+.pm-topbar h1,
+.pm-section-title h2,
+.pm-status-card h3 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.pm-topbar h1 {
+  font-size: 2rem;
+  line-height: 1.15;
+}
+
+.pm-kicker {
+  margin: 0 0 4px;
+  color: var(--pm-blue);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pm-endpoint {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.pm-workspace {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.08fr) minmax(300px, 0.92fr);
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.pm-panel {
+  background: var(--pm-sheet);
+  border: 2px solid var(--pm-line);
+  box-shadow: 6px 6px 0 var(--pm-shadow);
+  padding: 20px;
+}
+
+.pm-form-panel {
+  transform: rotate(0.25deg);
+}
+
+.pm-result-panel {
+  transform: rotate(-0.2deg);
+}
+
+.pm-records-panel {
+  grid-column: 1 / -1;
+  transform: rotate(0.12deg);
+}
+
+.pm-section-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.pm-section-title h2 {
+  font-size: 1.45rem;
+}
+
+.pm-action-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.pm-action {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  color: var(--pm-ink);
+  background: #fff;
+  border-color: var(--pm-line);
+  font-size: 1rem;
+}
+
+.pm-action.is-active {
+  background: var(--pm-yellow);
+  box-shadow: 3px 3px 0 var(--pm-shadow);
+}
+
+.pm-person-form {
+  display: grid;
+  gap: 12px;
+}
+
+.pm-person-form label {
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.pm-person-form input {
+  width: 100%;
+  min-height: 44px;
+  background: #fffefa;
+}
+
+.pm-field-note {
+  margin: -6px 0 2px;
+  color: var(--pm-muted);
+  font-size: 0.9rem;
+}
+
+.pm-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.pm-form-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.pm-form-actions button {
+  min-height: 42px;
+}
+
+.pm-status-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  min-height: 92px;
+  margin: 0 0 18px;
+  padding: 14px;
+  background: rgba(46, 111, 136, 0.08);
+  border: 2px dashed rgba(34, 33, 31, 0.72);
+}
+
+.pm-status-card p {
+  margin: 6px 0 0;
+  color: var(--pm-muted);
+}
+
+.pm-status-dot {
+  width: 16px;
+  height: 16px;
+  margin-top: 6px;
+  border: 2px solid var(--pm-line);
+  border-radius: 999px;
+  background: var(--pm-green);
+}
+
+.pm-status-card.is-error {
+  background: rgba(215, 111, 86, 0.14);
+}
+
+.pm-status-card.is-error .pm-status-dot {
+  background: var(--pm-coral);
+}
+
+.pm-code-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.pm-code-label {
+  margin: 0 0 8px;
+  color: var(--pm-blue);
+  font-weight: 700;
+}
+
+.pm-code-grid pre {
+  min-height: 184px;
+  max-height: 240px;
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  background: #292721;
+  color: #fff6dc;
+  border: 2px solid var(--pm-line);
+  white-space: pre;
+}
+
+.pm-record-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pm-record-card {
+  min-height: 142px;
+  padding: 14px;
+  background: #fff;
+  border: 2px solid var(--pm-line);
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.pm-record-card:hover {
+  background: #fff7d8;
+  box-shadow: 4px 4px 0 var(--pm-shadow);
+  transform: translateY(-2px);
+}
+
+.pm-record-card.is-selected {
+  background: rgba(79, 138, 95, 0.14);
+  box-shadow: 4px 4px 0 var(--pm-shadow);
+}
+
+.pm-record-card h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-size: 1.12rem;
+}
+
+.pm-record-card dl {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 7px 10px;
+  margin: 0;
+}
+
+.pm-record-card dt {
+  color: var(--pm-muted);
+  font-weight: 700;
+}
+
+.pm-record-card dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.pm-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 20px;
+  color: var(--pm-muted);
+  border: 2px dashed rgba(34, 33, 31, 0.7);
+  background: rgba(255, 255, 255, 0.56);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .pm-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .pm-code-grid,
+  .pm-record-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .pm-shell {
+    width: min(100% - 20px, 1180px);
+    padding-top: 12px;
+  }
+
+  .pm-topbar {
+    align-items: flex-start;
+    flex-direction: column;
+    transform: none;
+  }
+
+  .pm-endpoint {
+    justify-content: flex-start;
+  }
+
+  .pm-panel {
+    padding: 16px;
+    transform: none;
+  }
+
+  .pm-action-tabs,
+  .pm-field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pm-action {
+    text-align: left;
+  }
+}
