@@ -102,6 +102,14 @@ func TestHandlerErrors(t *testing.T) {
 			wantError: "userid must start with a letter and contain letters and digits only",
 		},
 		{
+			name:      "invalid name",
+			method:    http.MethodPost,
+			path:      "/create",
+			body:      `{"userid":"u1","name":"Alice1","email":"alice@example.com","phone":"13800138000"}`,
+			wantCode:  http.StatusBadRequest,
+			wantError: "name must not contain digits",
+		},
+		{
 			name:      "invalid email",
 			method:    http.MethodPost,
 			path:      "/create",

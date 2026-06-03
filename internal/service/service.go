@@ -15,6 +15,7 @@ var ErrValidation = errors.New("validation failed")
 
 var (
 	userIDPattern              = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+	nameDigitPattern           = regexp.MustCompile(`[0-9]`)
 	mainlandChinaMobilePattern = regexp.MustCompile(`^1[3-9][0-9]{9}$`)
 )
 
@@ -118,6 +119,8 @@ func validatePerson(person model.Person) error {
 	switch {
 	case person.Name == "":
 		return validationError("name is required")
+	case nameDigitPattern.MatchString(person.Name):
+		return validationError("name must not contain digits")
 	case person.Email == "":
 		return validationError("email is required")
 	case !validEmail(person.Email):
