@@ -102,6 +102,14 @@ func TestHandlerErrors(t *testing.T) {
 			wantError: "userid must start with a letter and contain letters and digits only",
 		},
 		{
+			name:      "userid too long",
+			method:    http.MethodPost,
+			path:      "/create",
+			body:      `{"userid":"u12345678901234567890123456789012","name":"Alice","email":"alice@example.com","phone":"13800138000"}`,
+			wantCode:  http.StatusBadRequest,
+			wantError: "userid must be no more than 32 characters",
+		},
+		{
 			name:      "invalid name",
 			method:    http.MethodPost,
 			path:      "/create",

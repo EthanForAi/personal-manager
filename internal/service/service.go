@@ -13,6 +13,8 @@ import (
 
 var ErrValidation = errors.New("validation failed")
 
+const maxUserIDLength = 32
+
 var (
 	userIDPattern              = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
 	nameDigitPattern           = regexp.MustCompile(`[0-9]`)
@@ -138,6 +140,8 @@ func validateUserID(userid string) error {
 	switch {
 	case userid == "":
 		return validationError("userid is required")
+	case len(userid) > maxUserIDLength:
+		return validationError("userid must be no more than 32 characters")
 	case !userIDPattern.MatchString(userid):
 		return validationError("userid must start with a letter and contain letters and digits only")
 	default:
