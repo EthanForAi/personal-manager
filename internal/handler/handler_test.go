@@ -66,6 +66,24 @@ func TestHandlerCRUD(t *testing.T) {
 	assertError(t, rec, "record not found")
 }
 
+func TestHandlerRejectsDuplicateEmail(t *testing.T) {
+	router := newTestRouter(t)
+
+	rec := postJSON(router, "/create", `{"userid":"u1","name":"Alice","email":"alice@example.com","phone":"13800138000"}`)
+	assertStatus(t, rec, http.StatusOK)
+
+	rec = postJSON(router, "/create", `{"userid":"u2","name":"Bob","email":"alice@example.com","phone":"13900139000"}`)
+	assertStatus(t, rec, http.StatusBadRequest)
+	assertError(t, rec, "email already exists")
+
+	rec = postJSON(router, "/create", `{"userid":"u2","name":"Bob","email":"bob@example.com","phone":"13900139000"}`)
+	assertStatus(t, rec, http.StatusOK)
+
+	rec = postJSON(router, "/update", `{"userid":"u2","name":"Bob","email":"alice@example.com","phone":"13900139000"}`)
+	assertStatus(t, rec, http.StatusBadRequest)
+	assertError(t, rec, "email already exists")
+}
+
 func TestHandlerErrors(t *testing.T) {
 	router := newTestRouter(t)
 
