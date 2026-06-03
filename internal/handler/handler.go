@@ -24,6 +24,7 @@ type Service interface {
 type Handler struct {
 	service Service
 	logger  *log.Logger
+	now     func() time.Time
 }
 
 type idRequest struct {
@@ -39,10 +40,17 @@ func New(service Service) *Handler {
 }
 
 func NewWithLogger(service Service, logger *log.Logger) *Handler {
+	return newWithLoggerAndClock(service, logger, time.Now)
+}
+
+func newWithLoggerAndClock(service Service, logger *log.Logger, now func() time.Time) *Handler {
 	if logger == nil {
 		logger = log.Default()
 	}
-	return &Handler{service: service, logger: logger}
+	if now == nil {
+		now = time.Now
+	}
+	return &Handler{service: service, logger: logger, now: now}
 }
 
 func (h *Handler) Routes() http.Handler {
@@ -161,27 +169,34 @@ func (h *Handler) handleCheck(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
+		start := h.now()
 		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 
 		next.ServeHTTP(rec, r)
 
-		h.logger.Printf(
+		h.logf(
 			"request completed method=%s path=%s status=%d duration=%s",
 			r.Method,
 			r.URL.Path,
 			rec.status,
-			time.Since(start),
+			h.now().Sub(start),
 		)
 	})
 }
 
 func (h *Handler) logOperation(operation string, userid string, err error) {
 	if err != nil {
-		h.logger.Printf("operation=%s userid=%q result=error error=%q", operation, userid, err.Error())
+		h.logf("operation=%s userid=%q result=error error=%q", operation, userid, err.Error())
 		return
 	}
-	h.logger.Printf("operation=%s userid=%q result=success", operation, userid)
+	h.logf("operation=%s userid=%q result=success", operation, userid)
+}
+
+func (h *Handler) logf(format string, args ...any) {
+	logArgs := make([]any, 0, len(args)+1)
+	logArgs = append(logArgs, h.now().UTC().Format(time.RFC3339Nano))
+	logArgs = append(logArgs, args...)
+	h.logger.Printf("timestamp=%s "+format, logArgs...)
 }
 
 type statusRecorder struct {

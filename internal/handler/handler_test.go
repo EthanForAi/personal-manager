@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"personal-manager/internal/model"
 	"personal-manager/internal/service"
@@ -176,7 +177,10 @@ func TestHandlerErrors(t *testing.T) {
 
 func TestHandlerLogsRequestAndOperation(t *testing.T) {
 	var logs bytes.Buffer
-	router := newTestRouterWithLogger(t, log.New(&logs, "", 0))
+	fixedTime := time.Date(2026, 6, 3, 10, 11, 12, 0, time.UTC)
+	router := newTestRouterWithLoggerAndClock(t, log.New(&logs, "", 0), func() time.Time {
+		return fixedTime
+	})
 
 	rec := postJSON(router, "/create", `{"userid":"u1","name":"Alice","email":"alice@example.com","phone":"13800138000"}`)
 	assertStatus(t, rec, http.StatusOK)
@@ -186,14 +190,20 @@ func TestHandlerLogsRequestAndOperation(t *testing.T) {
 
 	got := logs.String()
 	wantLogs := []string{
-		`operation=create userid="u1" result=success`,
-		`request completed method=POST path=/create status=200`,
-		`operation=read userid="missing" result=error error="record not found"`,
-		`request completed method=POST path=/read status=404`,
+		`timestamp=2026-06-03T10:11:12Z operation=create userid="u1" result=success`,
+		`timestamp=2026-06-03T10:11:12Z request completed method=POST path=/create status=200`,
+		`timestamp=2026-06-03T10:11:12Z operation=read userid="missing" result=error error="record not found"`,
+		`timestamp=2026-06-03T10:11:12Z request completed method=POST path=/read status=404`,
 	}
 	for _, want := range wantLogs {
 		if !strings.Contains(got, want) {
 			t.Fatalf("logs missing %q; got:\n%s", want, got)
+		}
+	}
+
+	for _, line := range strings.Split(strings.TrimSpace(got), "\n") {
+		if !strings.HasPrefix(line, "timestamp=2026-06-03T10:11:12Z ") {
+			t.Fatalf("log line missing timestamp prefix: %q", line)
 		}
 	}
 }
@@ -205,6 +215,12 @@ func newTestRouter(t *testing.T) http.Handler {
 }
 
 func newTestRouterWithLogger(t *testing.T, logger *log.Logger) http.Handler {
+	t.Helper()
+
+	return newTestRouterWithLoggerAndClock(t, logger, nil)
+}
+
+func newTestRouterWithLoggerAndClock(t *testing.T, logger *log.Logger, now func() time.Time) http.Handler {
 	t.Helper()
 
 	if logger == nil {
@@ -221,7 +237,7 @@ func newTestRouterWithLogger(t *testing.T, logger *log.Logger) http.Handler {
 		}
 	})
 
-	return NewWithLogger(service.New(st), logger).Routes()
+	return newWithLoggerAndClock(service.New(st), logger, now).Routes()
 }
 
 func postJSON(handler http.Handler, path string, body string) *httptest.ResponseRecorder {
