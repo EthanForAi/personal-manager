@@ -3,9 +3,12 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"personal-manager/internal/model"
@@ -171,8 +174,42 @@ func TestHandlerErrors(t *testing.T) {
 	}
 }
 
+func TestHandlerLogsRequestAndOperation(t *testing.T) {
+	var logs bytes.Buffer
+	router := newTestRouterWithLogger(t, log.New(&logs, "", 0))
+
+	rec := postJSON(router, "/create", `{"userid":"u1","name":"Alice","email":"alice@example.com","phone":"13800138000"}`)
+	assertStatus(t, rec, http.StatusOK)
+
+	rec = postJSON(router, "/read", `{"userid":"missing"}`)
+	assertStatus(t, rec, http.StatusNotFound)
+
+	got := logs.String()
+	wantLogs := []string{
+		`operation=create userid="u1" result=success`,
+		`request completed method=POST path=/create status=200`,
+		`operation=read userid="missing" result=error error="record not found"`,
+		`request completed method=POST path=/read status=404`,
+	}
+	for _, want := range wantLogs {
+		if !strings.Contains(got, want) {
+			t.Fatalf("logs missing %q; got:\n%s", want, got)
+		}
+	}
+}
+
 func newTestRouter(t *testing.T) http.Handler {
 	t.Helper()
+
+	return newTestRouterWithLogger(t, nil)
+}
+
+func newTestRouterWithLogger(t *testing.T, logger *log.Logger) http.Handler {
+	t.Helper()
+
+	if logger == nil {
+		logger = log.New(io.Discard, "", 0)
+	}
 
 	st, err := store.Open(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
@@ -184,7 +221,7 @@ func newTestRouter(t *testing.T) http.Handler {
 		}
 	})
 
-	return New(service.New(st)).Routes()
+	return NewWithLogger(service.New(st), logger).Routes()
 }
 
 func postJSON(handler http.Handler, path string, body string) *httptest.ResponseRecorder {

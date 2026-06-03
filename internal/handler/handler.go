@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
+	"time"
 
 	"personal-manager/internal/model"
 	"personal-manager/internal/service"
@@ -21,6 +23,7 @@ type Service interface {
 
 type Handler struct {
 	service Service
+	logger  *log.Logger
 }
 
 type idRequest struct {
@@ -32,7 +35,14 @@ type errorResponse struct {
 }
 
 func New(service Service) *Handler {
-	return &Handler{service: service}
+	return NewWithLogger(service, log.Default())
+}
+
+func NewWithLogger(service Service, logger *log.Logger) *Handler {
+	if logger == nil {
+		logger = log.Default()
+	}
+	return &Handler{service: service, logger: logger}
 }
 
 func (h *Handler) Routes() http.Handler {
@@ -42,7 +52,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("/update", h.handleUpdate)
 	mux.HandleFunc("/delete", h.handleDelete)
 	mux.HandleFunc("/check", h.handleCheck)
-	return mux
+	return h.logRequests(mux)
 }
 
 func (h *Handler) handleCreate(w http.ResponseWriter, r *http.Request) {
@@ -57,10 +67,12 @@ func (h *Handler) handleCreate(w http.ResponseWriter, r *http.Request) {
 
 	person, err := h.service.Create(r.Context(), req)
 	if err != nil {
+		h.logOperation("create", req.UserID, err)
 		writeError(w, err)
 		return
 	}
 
+	h.logOperation("create", person.UserID, nil)
 	writeJSON(w, http.StatusOK, person)
 }
 
@@ -76,10 +88,12 @@ func (h *Handler) handleRead(w http.ResponseWriter, r *http.Request) {
 
 	person, err := h.service.Read(r.Context(), req.UserID)
 	if err != nil {
+		h.logOperation("read", req.UserID, err)
 		writeError(w, err)
 		return
 	}
 
+	h.logOperation("read", person.UserID, nil)
 	writeJSON(w, http.StatusOK, person)
 }
 
@@ -95,10 +109,12 @@ func (h *Handler) handleUpdate(w http.ResponseWriter, r *http.Request) {
 
 	person, err := h.service.Update(r.Context(), req)
 	if err != nil {
+		h.logOperation("update", req.UserID, err)
 		writeError(w, err)
 		return
 	}
 
+	h.logOperation("update", person.UserID, nil)
 	writeJSON(w, http.StatusOK, person)
 }
 
@@ -113,10 +129,12 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.Delete(r.Context(), req.UserID); err != nil {
+		h.logOperation("delete", req.UserID, err)
 		writeError(w, err)
 		return
 	}
 
+	h.logOperation("delete", req.UserID, nil)
 	writeJSON(w, http.StatusOK, model.DeleteResponse{Deleted: true})
 }
 
@@ -132,11 +150,55 @@ func (h *Handler) handleCheck(w http.ResponseWriter, r *http.Request) {
 
 	exists, err := h.service.Check(r.Context(), req.UserID)
 	if err != nil {
+		h.logOperation("check", req.UserID, err)
 		writeError(w, err)
 		return
 	}
 
+	h.logOperation("check", req.UserID, nil)
 	writeJSON(w, http.StatusOK, model.CheckResponse{Exists: exists})
+}
+
+func (h *Handler) logRequests(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+
+		next.ServeHTTP(rec, r)
+
+		h.logger.Printf(
+			"request completed method=%s path=%s status=%d duration=%s",
+			r.Method,
+			r.URL.Path,
+			rec.status,
+			time.Since(start),
+		)
+	})
+}
+
+func (h *Handler) logOperation(operation string, userid string, err error) {
+	if err != nil {
+		h.logger.Printf("operation=%s userid=%q result=error error=%q", operation, userid, err.Error())
+		return
+	}
+	h.logger.Printf("operation=%s userid=%q result=success", operation, userid)
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(status int) {
+	r.status = status
+	r.ResponseWriter.WriteHeader(status)
+}
+
+func (r *statusRecorder) Write(body []byte) (int, error) {
+	if r.status == 0 {
+		r.status = http.StatusOK
+	}
+	return r.ResponseWriter.Write(body)
 }
 
 func requirePost(w http.ResponseWriter, r *http.Request) bool {
