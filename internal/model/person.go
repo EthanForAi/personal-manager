@@ -10,3 +10,7 @@ type Person struct {
 type DeleteResponse struct {
 	Deleted bool `json:"deleted"`
 }
+
+type CheckResponse struct {
+	Exists bool `json:"exists"`
+}

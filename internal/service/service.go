@@ -35,6 +35,7 @@ type PersonStore interface {
 	Get(context.Context, string) (model.Person, error)
 	Update(context.Context, model.Person) error
 	Delete(context.Context, string) error
+	Exists(context.Context, string) (bool, error)
 }
 
 type Service struct {
@@ -90,6 +91,15 @@ func (s *Service) Delete(ctx context.Context, userid string) error {
 	}
 
 	return s.store.Delete(ctx, userid)
+}
+
+func (s *Service) Check(ctx context.Context, userid string) (bool, error) {
+	userid = strings.TrimSpace(userid)
+	if err := validateUserID(userid); err != nil {
+		return false, err
+	}
+
+	return s.store.Exists(ctx, userid)
 }
 
 func normalize(person model.Person) model.Person {
