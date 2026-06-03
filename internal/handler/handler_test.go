@@ -35,20 +35,23 @@ func TestHandlerCRUD(t *testing.T) {
 		Phone:  "13800138000",
 	})
 
-	rec = postJSON(router, "/check", `{"userid":"u1"}`)
-	assertStatus(t, rec, http.StatusOK)
-	assertCheck(t, rec, true)
+rec = postJSON(router, "/check", `{"userid":"u1"}`)
+assertStatus(t, rec, http.StatusOK)
+assertCheck(t, rec, true)
 
-	rec = postJSON(router, "/check", `{"userid":"missing"}`)
-	assertStatus(t, rec, http.StatusOK)
-	assertCheck(t, rec, false)
+rec = postJSON(router, "/check", `{"userid":"missing"}`)
+assertStatus(t, rec, http.StatusOK)
+assertCheck(t, rec, false)
 
-	updateBody := `{"userid":"u1","name":"Alice Smith","email":"alice.smith@example.com","phone":"13900139000"}`
-	rec = postJSON(router, "/update", updateBody)
-	assertStatus(t, rec, http.StatusOK)
-	assertPerson(t, rec, model.Person{
-		UserID: "u1",
-		Name:   "Alice Smith",
+updateBody := `{"userid":"u1","name":"AliceSmith","email":"alice.smith@example.com","phone":"13900139000"}`
+rec = postJSON(router, "/update", updateBody)
+assertStatus(t, rec, http.StatusOK)
+assertPerson(t, rec, model.Person{
+    UserID: "u1",
+    Name:   "AliceSmith",
+    Email:  "alice.smith@example.com",
+    Phone:  "13900139000",
+})
 		Email:  "alice.smith@example.com",
 		Phone:  "13900139000",
 	})
@@ -94,12 +97,22 @@ func TestHandlerErrors(t *testing.T) {
 			wantError: "userid is required",
 		},
 		{
-			name:      "invalid userid",
-			method:    http.MethodPost,
-			path:      "/create",
-			body:      `{"userid":"1user","name":"Alice","email":"alice@example.com","phone":"13800138000"}`,
-			wantCode:  http.StatusBadRequest,
-			wantError: "userid must start with a letter and contain letters and digits only",
+{
+    name:      "invalid name",
+    method:    http.MethodPost,
+    path:      "/create",
+    body:      `{"userid":"u1","name":"Alice1","email":"alice@example.com","phone":"13800138000"}`,
+    wantCode:  http.StatusBadRequest,
+    wantError: "name must contain letters only",
+},
+{
+    name:      "invalid userid",
+    method:    http.MethodPost,
+    path:      "/create",
+    body:      `{"userid":"1user","name":"Alice","email":"alice@example.com","phone":"13800138000"}`,
+    wantCode:  http.StatusBadRequest,
+    wantError: "userid must start with a letter and contain letters and digits only",
+},
 		},
 		{
 			name:      "invalid email",

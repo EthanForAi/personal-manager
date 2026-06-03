@@ -96,34 +96,33 @@ func TestCreateNormalizesAndStoresPerson(t *testing.T) {
 	}
 }
 
-func TestCreateValidatesUserIDFormat(t *testing.T) {
+func TestCreateValidatesNameLettersOnly(t *testing.T) {
 	tests := []struct {
-		name   string
-		userid string
+		nameValue string
+		caseName  string
 	}{
-		{name: "starts with digit", userid: "1user"},
-		{name: "contains hyphen", userid: "u-1"},
-		{name: "contains underscore", userid: "u_1"},
-		{name: "contains space", userid: "user 1"},
-		{name: "contains punctuation", userid: "user!"},
-		{name: "contains non ASCII letter", userid: "用户1"},
+		{nameValue: "Alice Smith", caseName: "contains space"},
+		{nameValue: "Alice1", caseName: "contains digit"},
+		{nameValue: "Alice-Smith", caseName: "contains hyphen"},
+		{nameValue: "Alice_ Smith", caseName: "contains underscore"},
+		{nameValue: "Alice!", caseName: "contains punctuation"},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.caseName, func(t *testing.T) {
 			svc := New(&fakeStore{})
 
 			_, err := svc.Create(context.Background(), model.Person{
-				UserID: tt.userid,
-				Name:   "Alice",
+				UserID: "u-1",
+				Name:   tt.nameValue,
 				Email:  "alice@example.com",
 				Phone:  "13800138000",
 			})
 			if !errors.Is(err, ErrValidation) {
 				t.Fatalf("Create() error = %v, want validation error", err)
 			}
-			if err.Error() != "userid must start with a letter and contain letters and digits only" {
-				t.Fatalf("Create() error = %q, want userid validation message", err.Error())
+			if err.Error() != "name must contain letters only" {
+				t.Fatalf("Create() error = %q, want name validation message", err.Error())
 			}
 		})
 	}
