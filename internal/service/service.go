@@ -59,6 +59,9 @@ func (s *Service) Create(ctx context.Context, person model.Person) (model.Person
 		if errors.Is(err, store.ErrDuplicate) {
 			return model.Person{}, validationError("userid already exists")
 		}
+		if errors.Is(err, store.ErrPhoneDuplicate) {
+			return model.Person{}, validationError("phone already exists")
+		}
 		return model.Person{}, err
 	}
 
@@ -81,6 +84,9 @@ func (s *Service) Update(ctx context.Context, person model.Person) (model.Person
 	}
 
 	if err := s.store.Update(ctx, person); err != nil {
+		if errors.Is(err, store.ErrPhoneDuplicate) {
+			return model.Person{}, validationError("phone already exists")
+		}
 		return model.Person{}, err
 	}
 

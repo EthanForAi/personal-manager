@@ -325,6 +325,40 @@ func TestCreateDuplicateUserIDReturnsValidationError(t *testing.T) {
 	}
 }
 
+func TestCreateDuplicatePhoneReturnsValidationError(t *testing.T) {
+	svc := New(&fakeStore{createErr: store.ErrPhoneDuplicate})
+
+	_, err := svc.Create(context.Background(), model.Person{
+		UserID: "u1",
+		Name:   "Alice",
+		Email:  "alice@example.com",
+		Phone:  "13800138000",
+	})
+	if !errors.Is(err, ErrValidation) {
+		t.Fatalf("Create() error = %v, want validation error", err)
+	}
+	if err.Error() != "phone already exists" {
+		t.Fatalf("Create() error = %q, want duplicate phone message", err.Error())
+	}
+}
+
+func TestUpdateDuplicatePhoneReturnsValidationError(t *testing.T) {
+	svc := New(&fakeStore{updateErr: store.ErrPhoneDuplicate})
+
+	_, err := svc.Update(context.Background(), model.Person{
+		UserID: "u1",
+		Name:   "Alice",
+		Email:  "alice@example.com",
+		Phone:  "13800138000",
+	})
+	if !errors.Is(err, ErrValidation) {
+		t.Fatalf("Update() error = %v, want validation error", err)
+	}
+	if err.Error() != "phone already exists" {
+		t.Fatalf("Update() error = %q, want duplicate phone message", err.Error())
+	}
+}
+
 func TestReadAndDeleteValidateUserID(t *testing.T) {
 	svc := New(&fakeStore{})
 
@@ -389,6 +423,7 @@ func TestCheckNormalizesUserIDAndReturnsExists(t *testing.T) {
 type fakeStore struct {
 	created      model.Person
 	createErr    error
+	updateErr    error
 	exists       bool
 	existsUserID string
 	existsErr    error
@@ -404,7 +439,7 @@ func (f *fakeStore) Get(_ context.Context, userid string) (model.Person, error) 
 }
 
 func (f *fakeStore) Update(_ context.Context, person model.Person) error {
-	return nil
+	return f.updateErr
 }
 
 func (f *fakeStore) Delete(_ context.Context, userid string) error {

@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	ErrNotFound  = errors.New("record not found")
-	ErrDuplicate = errors.New("userid already exists")
+	ErrNotFound       = errors.New("record not found")
+	ErrDuplicate      = errors.New("userid already exists")
+	ErrPhoneDuplicate = errors.New("phone already exists")
 )
 
 type Store struct {
@@ -39,13 +40,19 @@ func (s *Store) Close() error {
 }
 
 func (s *Store) init(ctx context.Context) error {
-	_, err := s.db.ExecContext(ctx, `
+	if _, err := s.db.ExecContext(ctx, `
 CREATE TABLE IF NOT EXISTS personal_info (
 	userid TEXT PRIMARY KEY,
 	name TEXT NOT NULL,
 	email TEXT NOT NULL,
 	phone TEXT NOT NULL
-)`)
+)`); err != nil {
+		return err
+	}
+
+	_, err := s.db.ExecContext(ctx, `
+CREATE UNIQUE INDEX IF NOT EXISTS idx_personal_info_phone
+ON personal_info (phone)`)
 	return err
 }
 
@@ -64,6 +71,22 @@ VALUES (?, ?, ?, ?)`,
 		return err
 	}
 	if rows == 0 {
+		exists, err := s.Exists(ctx, person.UserID)
+		if err != nil {
+			return err
+		}
+		if exists {
+			return ErrDuplicate
+		}
+
+		exists, err = s.phoneExists(ctx, person.Phone, "")
+		if err != nil {
+			return err
+		}
+		if exists {
+			return ErrPhoneDuplicate
+		}
+
 		return ErrDuplicate
 	}
 
@@ -90,8 +113,14 @@ func (s *Store) Update(ctx context.Context, person model.Person) error {
 	result, err := s.db.ExecContext(ctx, `
 UPDATE personal_info
 SET name = ?, email = ?, phone = ?
-WHERE userid = ?`,
-		person.Name, person.Email, person.Phone, person.UserID,
+WHERE userid = ?
+AND NOT EXISTS (
+	SELECT 1
+	FROM personal_info
+	WHERE phone = ?
+	AND userid <> ?
+)`,
+		person.Name, person.Email, person.Phone, person.UserID, person.Phone, person.UserID,
 	)
 	if err != nil {
 		return err
@@ -102,10 +131,42 @@ WHERE userid = ?`,
 		return err
 	}
 	if rows == 0 {
+		exists, err := s.Exists(ctx, person.UserID)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return ErrNotFound
+		}
+
+		exists, err = s.phoneExists(ctx, person.Phone, person.UserID)
+		if err != nil {
+			return err
+		}
+		if exists {
+			return ErrPhoneDuplicate
+		}
+
 		return ErrNotFound
 	}
 
 	return nil
+}
+
+func (s *Store) phoneExists(ctx context.Context, phone string, excludeUserID string) (bool, error) {
+	var exists bool
+	err := s.db.QueryRowContext(ctx, `
+SELECT EXISTS(
+	SELECT 1
+	FROM personal_info
+	WHERE phone = ?
+	AND userid <> ?
+)`, phone, excludeUserID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
 }
 
 func (s *Store) Delete(ctx context.Context, userid string) error {
