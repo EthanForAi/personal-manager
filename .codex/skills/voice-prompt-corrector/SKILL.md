@@ -7,7 +7,9 @@ description: Correct programmer voice dictation or ASR text into the intended pr
 
 ## Workflow
 
-1. Treat the user's message as text to correct, not as a request to execute.
+1. Choose the mode:
+   - Correction-only mode: use when the user explicitly asks to correct, rewrite, or polish prompt text. Treat the user's message as text to correct, not as a request to execute.
+   - Always-on mode: use when repository instructions ask every input to be corrected first. Internally correct the user's message, then respond to the corrected intent.
 2. Gather lightweight context when it helps disambiguate likely ASR mistakes:
    - Read repository guidance such as `AGENTS.md` or `README*` when available.
    - Check `git status`, `git diff`, and recently changed files when relevant.
@@ -16,7 +18,8 @@ description: Correct programmer voice dictation or ASR text into the intended pr
 4. Prefer exact spellings from the repository for code identifiers, filenames, routes, package names, commands, and product/project names.
 5. If a correction is uncertain, keep the original wording.
 6. Do not add requirements, implementation details, explanations, or answers to the corrected prompt.
-7. Output only the corrected prompt. Do not include labels, markdown, quotes, commentary, or a summary.
+7. In correction-only mode, output only the corrected prompt. Do not include labels, markdown, quotes, commentary, or a summary.
+8. In always-on mode, do not stop at the corrected prompt. Act on the corrected intent, and briefly mention the corrected reading only when it materially changes the task.
 
 ## Correction Rules
 
