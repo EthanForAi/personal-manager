@@ -10,16 +10,24 @@ description: Correct programmer voice dictation or ASR text into the intended pr
 1. Choose the mode:
    - Correction-only mode: use when the user explicitly asks to correct, rewrite, or polish prompt text. Treat the user's message as text to correct, not as a request to execute.
    - Always-on mode: use when repository instructions ask every input to be corrected first. Internally correct the user's message, then respond to the corrected intent.
-2. Gather lightweight context when it helps disambiguate likely ASR mistakes:
+2. Build a compact correction context when it helps disambiguate likely ASR mistakes:
+   - Include the recent conversation intent, the current raw input, current repository/branch/PR facts when known, and relevant file names, symbols, routes, packages, or commands.
+   - Keep the correction context to at most 1000 characters or 8 short bullets, whichever is smaller.
+   - Do not include secrets, tokens, or unrelated repository details.
+3. Gather lightweight repository context when needed:
    - Read repository guidance such as `AGENTS.md` or `README*` when available.
    - Check `git status`, `git diff`, and recently changed files when relevant.
    - Use `rg --files` and targeted `rg` searches for file names, route names, function names, types, variables, packages, and commands.
-3. Correct only likely speech-recognition errors. Preserve the user's original intent, language mix, tone, and level of detail.
-4. Prefer exact spellings from the repository for code identifiers, filenames, routes, package names, commands, and product/project names.
-5. If a correction is uncertain, keep the original wording.
-6. Do not add requirements, implementation details, explanations, or answers to the corrected prompt.
-7. In correction-only mode, output only the corrected prompt. Do not include labels, markdown, quotes, commentary, or a summary.
-8. In always-on mode, do not stop at the corrected prompt. Act on the corrected intent, and briefly mention the corrected reading only when it materially changes the task.
+4. Correct only likely speech-recognition errors. Preserve the user's original intent, language mix, tone, and level of detail.
+5. Prefer exact spellings from the repository for code identifiers, filenames, routes, package names, commands, and product/project names.
+6. If a correction is uncertain, keep the original wording.
+7. Do not add requirements, implementation details, explanations, or answers to the corrected prompt.
+8. Print both versions at the start of the response:
+   - `原始输入: <raw user input>`
+   - `纠正后: <corrected input>`
+   If no correction is needed, print the same text twice.
+9. In correction-only mode, stop after printing the two input lines.
+10. In always-on mode, continue after the two input lines and act on the corrected intent.
 
 ## Correction Rules
 
