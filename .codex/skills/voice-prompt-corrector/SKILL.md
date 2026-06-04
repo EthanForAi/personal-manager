@@ -26,8 +26,19 @@ description: Correct programmer voice dictation or ASR text into the intended pr
    - `原始输入: <raw user input>`
    - `纠正后: <corrected input>`
    If no correction is needed, print the same text twice.
-9. In correction-only mode, stop after printing the two input lines.
-10. In always-on mode, continue after the two input lines and act on the corrected intent.
+9. If the raw input and corrected input are identical:
+   - Treat the corrected input as the effective prompt.
+   - In correction-only mode, stop after printing the two input lines.
+   - In always-on mode, continue after the two input lines and act on the corrected intent.
+10. If the raw input and corrected input differ:
+   - Stop after printing both versions.
+   - Ask the user to choose exactly one option: `1` use original, `2` use corrected, or `3` provide an edited version.
+   - Do not act on either version until the user chooses.
+11. When the user chooses a version or provides edited text:
+   - Use that selected text as the effective prompt.
+   - If local clipboard access is available, copy the selected prompt to the clipboard using a safe stdin-based `pbcopy` call before continuing.
+   - Do not interpolate untrusted prompt text into shell commands. Pass it through stdin or a temporary file.
+   - If clipboard access is unavailable, print the selected prompt as a copyable fallback.
 
 ## Correction Rules
 
