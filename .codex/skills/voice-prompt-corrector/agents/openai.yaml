@@ -1,0 +1,4 @@
+interface:
+  display_name: "Voice Prompt Corrector"
+  short_description: "Correct voice-dictated coding prompts"
+  default_prompt: "Use $voice-prompt-corrector to correct this voice-dictated programming prompt."

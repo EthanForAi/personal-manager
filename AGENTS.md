@@ -17,6 +17,17 @@ Data is persisted in local SQLite.
 Default expectation:
 Implement requested changes with minimal correct modifications, add or update meaningful tests, validate with Go test commands, fix failures, and only finish when everything passes and the code has been pushed to GitHub when a Git remote is available.
 
+## Voice Prompt Correction Preference
+
+- Treat every user message in this repository as potentially voice-dictated.
+- Before deciding how to respond, internally correct likely ASR or voice dictation mistakes using `.codex/skills/voice-prompt-corrector/SKILL.md`.
+- Use current repository context, file names, function names, symbols, routes, commands, `AGENTS.md`, `README*`, git diff, and recently changed files when they help disambiguate likely recognition errors.
+- Build a compact correction context before correcting: include the recent conversation intent, current repository/branch/PR facts when known, and relevant files or symbols. Keep this context to at most 1000 characters or 8 short bullets, whichever is smaller.
+- Correct only likely recognition mistakes. Preserve user intent and do not add new requirements.
+- At the start of every response, print both the raw input and corrected input using the labels `原始输入:` and `纠正后:`. If no correction is needed, print the same text twice.
+- If the user is asking only for prompt correction, stop after printing the two input lines.
+- Otherwise, act on the corrected intent after the two input lines.
+
 ## Repository Context
 
 Core layers:
