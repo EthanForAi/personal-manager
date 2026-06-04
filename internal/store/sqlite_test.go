@@ -51,6 +51,16 @@ func TestStoreCreateGetUpdateDelete(t *testing.T) {
 		t.Fatalf("Create() duplicate error = %v, want %v", err, ErrDuplicate)
 	}
 
+	duplicateEmail := model.Person{
+		UserID: "u-2",
+		Name:   "Bob",
+		Email:  person.Email,
+		Phone:  "13900139000",
+	}
+	if err := st.Create(ctx, duplicateEmail); !errors.Is(err, ErrDuplicateEmail) {
+		t.Fatalf("Create() duplicate email error = %v, want %v", err, ErrDuplicateEmail)
+	}
+
 	updated := model.Person{
 		UserID: "u-1",
 		Name:   "Alice Smith",
@@ -83,6 +93,43 @@ func TestStoreCreateGetUpdateDelete(t *testing.T) {
 
 	if _, err := st.Get(ctx, updated.UserID); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("Get() deleted error = %v, want %v", err, ErrNotFound)
+	}
+}
+
+func TestStoreUpdateRejectsDuplicateEmail(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+
+	alice := model.Person{
+		UserID: "u-1",
+		Name:   "Alice",
+		Email:  "alice@example.com",
+		Phone:  "13800138000",
+	}
+	bob := model.Person{
+		UserID: "u-2",
+		Name:   "Bob",
+		Email:  "bob@example.com",
+		Phone:  "13900139000",
+	}
+	if err := st.Create(ctx, alice); err != nil {
+		t.Fatalf("Create() alice error = %v", err)
+	}
+	if err := st.Create(ctx, bob); err != nil {
+		t.Fatalf("Create() bob error = %v", err)
+	}
+
+	bob.Email = alice.Email
+	if err := st.Update(ctx, bob); !errors.Is(err, ErrDuplicateEmail) {
+		t.Fatalf("Update() duplicate email error = %v, want %v", err, ErrDuplicateEmail)
+	}
+
+	got, err := st.Get(ctx, bob.UserID)
+	if err != nil {
+		t.Fatalf("Get() bob error = %v", err)
+	}
+	if got.Email != "bob@example.com" {
+		t.Fatalf("bob email = %q, want unchanged email", got.Email)
 	}
 }
 
