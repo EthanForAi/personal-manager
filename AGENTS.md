@@ -25,8 +25,9 @@ Implement requested changes with minimal correct modifications, add or update me
 - Build a compact correction context before correcting: include the recent conversation intent, current repository/branch/PR facts when known, and relevant files or symbols. Keep this context to at most 1000 characters or 8 short bullets, whichever is smaller.
 - Correct only likely recognition mistakes. Preserve user intent and do not add new requirements.
 - At the start of every response, print both the raw input and corrected input using the labels `原始输入:` and `纠正后:`. If no correction is needed, print the same text twice.
-- If the user is asking only for prompt correction, stop after printing the two input lines.
-- Otherwise, act on the corrected intent after the two input lines.
+- If the raw input and corrected input are identical, use the corrected input as the effective prompt and continue normally.
+- If the raw input and corrected input differ, stop after printing both lines and ask the user to choose: `1` use original, `2` use corrected, or `3` provide an edited version. Do not act on either version until the user chooses.
+- When the user chooses or provides an edited version, use that selected text as the effective prompt. If local clipboard access is available, copy the selected or edited prompt to the clipboard with a safe stdin-based `pbcopy` call before continuing; otherwise print the selected prompt as a copyable fallback.
 
 ## Repository Context
 
